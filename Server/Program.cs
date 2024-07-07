@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace BlowtorchesAndGunpowder
 {
     class WireframeGameServer
-    {
+    {       
         public static void Main(string[] args)
         {
             // Create a server and start listening for incoming connections

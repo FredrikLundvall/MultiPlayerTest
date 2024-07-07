@@ -25,7 +25,7 @@ namespace BlowtorchesAndGunpowder
                 udpClient.ExclusiveAddressUse = false;
                 udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 udpClient.Client.Bind(fLocalEndPoint);
-                Console.WriteLine("Listening for udp {0}", remoteEndPoint.ToString());
+                LogToConsole("Listening for udp {0}", remoteEndPoint.ToString());
                 string allDatagrams = "";
                 while (fStarted)
                 {
@@ -34,10 +34,10 @@ namespace BlowtorchesAndGunpowder
                     if(!fAllClientEndpoints.Any(s => s.Address.ToString() == remoteEndPoint.Address.ToString())) 
                     {
                         fAllClientEndpoints.Add(new IPEndPoint(remoteEndPoint.Address, UDP_CLIENT_PORT));
-                        Console.WriteLine("Adding new client {0}", remoteEndPoint.Address.ToString());
+                        LogToConsole("Adding new client {0}", remoteEndPoint.Address.ToString());
                     }
                     var datagram = Encoding.ASCII.GetString(receivedResults);
-                    Console.WriteLine("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram);
+                    LogToConsole("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram);
                     allDatagrams += datagram;
                     if (datagram.EndsWith("\"FromServer\":false}"))
                     {
@@ -66,9 +66,16 @@ namespace BlowtorchesAndGunpowder
             foreach(var endpoint in fAllClientEndpoints)
             {
                 udpSender.Send(datagram, datagram.Length, endpoint);
-                Console.WriteLine("Sending data to {0} - {1}", endpoint.ToString(), aMessage);
+                LogToConsole("Sending data to {0} - {1}", endpoint.ToString(), aMessage);
             }
         }
-
+        private void LogToConsole(string format, object arg0)
+        {
+            LogToConsole(format, arg0, null);
+        }
+        private void LogToConsole(string format, object arg0, object arg1)
+        {
+            Console.WriteLine("{0} " + format, DateTime.Now.ToString("HH:mm:ss"), arg0, arg1);
+        }
     }
 }

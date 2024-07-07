@@ -23,7 +23,6 @@ namespace BlowtorchesAndGunpowder
         Ship _heroShip = new Ship();
         List<Shot> _heroShotList = new List<Shot>();
         GameClient _gameClient = new GameClient();
-        String fLastLog = "";
 
         public WireframeGame() : base()
         {
@@ -169,18 +168,8 @@ namespace BlowtorchesAndGunpowder
             // Draw information strings.
             //g.DrawString("Click enter to toggle timed display refresh " + timer1.Enabled.ToString() , OutputFont, Brushes.White, 10, 10);
             g.DrawString(string.Format("Direction: {0:F2}", _heroShip.GetDirection()), OutputFont, Brushes.White, 10, 34);
-            //g.DrawString(string.Format("Cos: {2:F2} Sin: {3:F2} SpeedF: {0:F2} SpeedS: {1:F2}", forwardSpeed, strafeSpeed, (float)Math.Cos(camera.MyDirection.VXY), (float)Math.Sin(camera.MyDirection.VXY)), new Font("Arial", 8), Brushes.White, 10, 46);
-            String currentLog = _gameClient.PullLog();
-            if (currentLog.Trim() != "")
-                fLastLog += currentLog;
-            String[] allRows = fLastLog.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-            if (allRows.Length > 15)
-            {
-                var clipAt15Rows = new String[15];
-                Array.Copy(allRows, allRows.Length - 15, clipAt15Rows, 0, 15);
-                fLastLog = String.Join(Environment.NewLine, clipAt15Rows) + Environment.NewLine;
-            }
-            g.DrawString(fLastLog, OutputFont, Brushes.White, new RectangleF(10, 50, 500, 200));
+            String[] allRows = _gameClient.GetLog();
+            g.DrawString(String.Join(Environment.NewLine, allRows) + Environment.NewLine, OutputFont, Brushes.LightBlue, new RectangleF(10, 50, 500, 200));
         }
         protected override void OnPaint(PaintEventArgs e)
         {

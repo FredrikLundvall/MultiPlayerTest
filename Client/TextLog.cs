@@ -9,13 +9,14 @@ namespace BlowtorchesAndGunpowder
         private List<String> fLog = new List<string>();
         public void AddLog(String aLog)
         {
-            fLog.Add(aLog);
+            fLog.Add(DateTime.Now.ToString("HH:mm:ss") + " " + aLog);
+            if(fLog.Count > 15)
+            fLog.RemoveRange(0, fLog.Count -15);
         }
-        public string PullLog()
+        public String[] GetLog()
         {
-            string result = String.Join(Environment.NewLine, fLog.ToArray()) + Environment.NewLine;
-            fLog.Clear();
-            return result;
+            //string result = String.Join(Environment.NewLine, fLog.ToArray()) + Environment.NewLine;
+            return fLog.ToArray();
         }
     }
 }

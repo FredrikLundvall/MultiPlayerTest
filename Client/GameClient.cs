@@ -68,9 +68,9 @@ namespace BlowtorchesAndGunpowder
             fUdpSender.Send(datagram, datagram.Length, fServerEndPoint);
             fTextLog.AddLog(String.Format("Sending data to {0} - {1}", fServerEndPoint.ToString(), aMessage));
         }
-        public string PullLog()
+        public string[] GetLog()
         {
-            return fTextLog.PullLog();
+            return fTextLog.GetLog();
         }
         public void Close()
         {
