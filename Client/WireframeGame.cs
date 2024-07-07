@@ -215,7 +215,7 @@ namespace BlowtorchesAndGunpowder
                 this.WindowState = FormWindowState.Maximized;
                 this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             }
-        }        //The equivalent of PeekMessage() is Application.DoEvents().  You could modify your Main() function in Program.cs like this:
+        } 
     }
 }
 

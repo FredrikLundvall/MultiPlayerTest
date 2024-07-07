@@ -7,9 +7,9 @@ namespace BlowtorchesAndGunpowder
     {
         public Shot(TimeSpan totalElapsedTime, PointF position, float direction, PointF startSpeed)
         {
-            _removeTime = totalElapsedTime + new TimeSpan(0, 0, 0, 0, 11700);
+            _removeTime = totalElapsedTime + new TimeSpan(0, 0, 0, 0, 4000);
 ;
-            _thrustorsForce = 12990f;
+            _thrustorsForce = 30000f;
 
             _position.X = position.X;
             _position.Y = position.Y;
