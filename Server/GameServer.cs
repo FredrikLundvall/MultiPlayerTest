@@ -42,7 +42,7 @@ namespace BlowtorchesAndGunpowder
                     if (datagram.EndsWith("\"FromServer\":false}"))
                     {
                         var clientAction = ClientAction.CreateFromJson(datagram);
-                        if (clientAction.PlayerShooting)
+                        if (clientAction.IsShooting)
                         {
                             var gameState = new GameState();
                             gameState.PlayerShoot.Add(0, true);
@@ -75,7 +75,7 @@ namespace BlowtorchesAndGunpowder
         }
         private void LogToConsole(string format, object arg0, object arg1)
         {
-            Console.WriteLine("{0} " + format, DateTime.Now.ToString("HH:mm:ss"), arg0, arg1);
+            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " " + format, arg0, arg1);
         }
     }
 }

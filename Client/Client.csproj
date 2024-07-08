@@ -62,7 +62,6 @@
     <Compile Include="GameSettingsForm.Designer.cs">
       <DependentUpon>GameSettingsForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="GameState.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="TextLog.cs" />

@@ -6,11 +6,11 @@ namespace BlowtorchesAndGunpowder
 {
     public class ClientAction : MessageBase
     {
-        public bool PlayerShooting;
+        public bool IsShooting;
 
-        public ClientAction(bool aPlayerShooting) : base(false)
+        public ClientAction(bool aIsShooting) : base("ClientAction", false)
         {
-            PlayerShooting = aPlayerShooting;
+            IsShooting = aIsShooting;
         }
         public static ClientAction CreateFromJson(string aActionJson)
         {

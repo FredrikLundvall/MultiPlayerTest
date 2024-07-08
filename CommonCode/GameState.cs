@@ -11,7 +11,7 @@ namespace BlowtorchesAndGunpowder
     public class GameState : MessageBase
     {
         public Dictionary<int,bool> PlayerShoot = new Dictionary<int, bool>();
-        public GameState() : base(true)
+        public GameState() : base("GameState", true)
         {
         }
         public static GameState CreateFromJson(string aActionJson)

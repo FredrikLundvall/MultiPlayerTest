@@ -15,7 +15,6 @@ namespace BlowtorchesAndGunpowder
         }
         public String[] GetLog()
         {
-            //string result = String.Join(Environment.NewLine, fLog.ToArray()) + Environment.NewLine;
             return fLog.ToArray();
         }
     }

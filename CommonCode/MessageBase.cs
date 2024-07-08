@@ -6,10 +6,12 @@ namespace BlowtorchesAndGunpowder
 {
     public abstract class MessageBase
     {
-        public readonly bool FromServer;
+        public string MessageClass;
+        public bool FromServer;
 
-        public MessageBase(bool aFromServer)
+        public MessageBase(string aMessageClass, bool aFromServer)
         {
+            MessageClass = aMessageClass;
             FromServer = aFromServer;
         }
 

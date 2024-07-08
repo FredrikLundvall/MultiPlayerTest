@@ -58,6 +58,7 @@ namespace BlowtorchesAndGunpowder
             //DrawToBuffer(grafx.Graphics);
             //this.WindowState = FormWindowState.Maximized;
             Task.Run(() => _gameClient.Start());
+            _gameClient.SendMessage(new ClientAction(false).GetAsJson());
             stopWatch.Start();
             _totalTimeElapsed = stopWatch.Elapsed;
             _totalTimeElapsedWhenUpdateScreen = _totalTimeElapsed;
@@ -167,9 +168,9 @@ namespace BlowtorchesAndGunpowder
                 g.DrawLines(_heroShotPen, _heroShotList[i].GetWorldPoints());
             // Draw information strings.
             //g.DrawString("Click enter to toggle timed display refresh " + timer1.Enabled.ToString() , OutputFont, Brushes.White, 10, 10);
-            g.DrawString(string.Format("Direction: {0:F2}", _heroShip.GetDirection()), OutputFont, Brushes.White, 10, 34);
+            g.DrawString(string.Format("Direction: {0:F2} radians", _heroShip.GetDirection()), OutputFont, Brushes.White, 10, 34);
             String[] allRows = _gameClient.GetLog();
-            g.DrawString(String.Join(Environment.NewLine, allRows) + Environment.NewLine, OutputFont, Brushes.LightBlue, new RectangleF(10, 50, 500, 200));
+            g.DrawString(String.Join(Environment.NewLine, allRows) + Environment.NewLine, OutputFont, Brushes.LightBlue, new RectangleF(10, 50, 1900, 200));
         }
         protected override void OnPaint(PaintEventArgs e)
         {

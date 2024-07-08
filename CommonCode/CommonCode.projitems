@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)ClientAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GameState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MessageBase.cs" />
   </ItemGroup>
 </Project>
