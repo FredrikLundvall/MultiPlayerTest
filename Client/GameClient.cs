@@ -38,7 +38,6 @@ namespace BlowtorchesAndGunpowder
                 //udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 //udpClient.Client.Bind(fLocalEndPoint);
                 fTextLog.AddLog(String.Format("Listening for udp {0}", udpClient.Client.LocalEndPoint.ToString()));
-                string allDatagrams = "";
                 while (fStarted)
                 {
                     //IPEndPoint object will allow us to read datagrams sent from any source.
@@ -47,17 +46,28 @@ namespace BlowtorchesAndGunpowder
                     {
                         var datagram = Encoding.ASCII.GetString(receivedResults);
                         fTextLog.AddLog(String.Format("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram));
-                        allDatagrams += datagram;
-                        if (datagram.EndsWith("\"FromServer\":true}"))
-                        {
-                            var gameState = GameState.CreateFromJson(datagram);
-                            if (gameState.PlayerShoot[0])
-                                fTextLog.AddLog(String.Format("Shooting"));
-                        }
+                        InterpretIncommingMessage(remoteEndPoint, datagram);
                     }
                 }
             }
         }
+
+        private void InterpretIncommingMessage(IPEndPoint aRemoteEndPoint, string aDatagram)
+        {
+            if (aDatagram.EndsWith("\"MessageClass\":\"GameState\"}"))
+            {
+                var gameState = GameState.CreateFromJson(aDatagram);
+                if (gameState.PlayerShoot[0])
+                    fTextLog.AddLog(String.Format("Shooting"));
+            }
+            else if (aDatagram.EndsWith("\"MessageClass\":\"ServerEvent\"}"))
+            {
+                var serverEvent = ServerEvent.CreateFromJson(aDatagram);
+                if (serverEvent.EventType == ServerEventEnum.Admitting)
+                    fTextLog.AddLog(String.Format("Admitted"));
+            }
+        }
+
         public void Stop()
         {
             fStarted = false;

@@ -8,7 +8,7 @@ namespace BlowtorchesAndGunpowder
     {
         public bool IsShooting;
 
-        public ClientAction(bool aIsShooting) : base("ClientAction", false)
+        public ClientAction(bool aIsShooting) : base("ClientAction")
         {
             IsShooting = aIsShooting;
         }

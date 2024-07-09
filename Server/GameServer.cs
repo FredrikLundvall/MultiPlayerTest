@@ -26,37 +26,51 @@ namespace BlowtorchesAndGunpowder
                 udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 udpClient.Client.Bind(fLocalEndPoint);
                 LogToConsole("Listening for udp {0}", remoteEndPoint.ToString());
-                string allDatagrams = "";
                 while (fStarted)
                 {
                     //IPEndPoint object will allow us to read datagrams sent from any source.
                     var receivedResults = udpClient.Receive(ref remoteEndPoint);
-                    if(!fAllClientEndpoints.Any(s => s.Address.ToString() == remoteEndPoint.Address.ToString())) 
-                    {
-                        fAllClientEndpoints.Add(new IPEndPoint(remoteEndPoint.Address, UDP_CLIENT_PORT));
-                        LogToConsole("Adding new client {0}", remoteEndPoint.Address.ToString());
-                    }
                     var datagram = Encoding.ASCII.GetString(receivedResults);
                     LogToConsole("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram);
-                    allDatagrams += datagram;
-                    if (datagram.EndsWith("\"FromServer\":false}"))
-                    {
-                        var clientAction = ClientAction.CreateFromJson(datagram);
-                        if (clientAction.IsShooting)
-                        {
-                            var gameState = new GameState();
-                            gameState.PlayerShoot.Add(0, true);
-                            SendMessage(gameState.GetAsJson());
-                        }
-                    }
+                    InterpretIncommingMessage(remoteEndPoint, datagram);
                 }
             }
         }
+
+        private void InterpretIncommingMessage(IPEndPoint aRemoteEndPoint, string aDatagram)
+        {
+            if (aDatagram.EndsWith("\"MessageClass\":\"ClientEvent\"}"))
+            {
+                var clientEvent = ClientEvent.CreateFromJson(aDatagram);
+                if (clientEvent.EventType == ClientEventEnum.Joining)
+                {
+                    if (!fAllClientEndpoints.Any(s => s.Address.ToString() == aRemoteEndPoint.Address.ToString()))
+                    {
+                        var ipEndPoint = new IPEndPoint(aRemoteEndPoint.Address, UDP_CLIENT_PORT);
+                        fAllClientEndpoints.Add(ipEndPoint);
+                        LogToConsole("Adding new client {0}", aRemoteEndPoint.Address.ToString());
+                        var serverEvent = new ServerEvent(ServerEventEnum.Admitting);
+                        SendMessage(ipEndPoint, serverEvent.GetAsJson());
+                    }
+                }
+            }
+            else if (aDatagram.EndsWith("\"MessageClass\":\"ClientAction\"}"))
+            {
+                var clientAction = ClientAction.CreateFromJson(aDatagram);
+                if (clientAction.IsShooting)
+                {
+                    var gameState = new GameState();
+                    gameState.PlayerShoot.Add(0, true);
+                    SendMessageToAllClients(gameState.GetAsJson());
+                }
+            }
+        }
+
         public void Stop()
         {
             fStarted = false;
         }
-        public void SendMessage(String aMessage)
+        public void SendMessageToAllClients(String aMessage)
         {
             UdpClient udpSender = new UdpClient();
             udpSender.ExclusiveAddressUse = false;
@@ -68,6 +82,16 @@ namespace BlowtorchesAndGunpowder
                 udpSender.Send(datagram, datagram.Length, endpoint);
                 LogToConsole("Sending data to {0} - {1}", endpoint.ToString(), aMessage);
             }
+        }
+        public void SendMessage(IPEndPoint aIpEndPoint, String aMessage)
+        {
+            UdpClient udpSender = new UdpClient();
+            udpSender.ExclusiveAddressUse = false;
+            udpSender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+            udpSender.Client.Bind(fLocalEndPoint);
+            byte[] datagram = Encoding.ASCII.GetBytes(aMessage);
+            udpSender.Send(datagram, datagram.Length, aIpEndPoint);
+            LogToConsole("Sending data to {0} - {1}", aIpEndPoint.ToString(), aMessage);
         }
         private void LogToConsole(string format, object arg0)
         {

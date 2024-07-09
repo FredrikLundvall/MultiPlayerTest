@@ -7,12 +7,10 @@ namespace BlowtorchesAndGunpowder
     public abstract class MessageBase
     {
         public string MessageClass;
-        public bool FromServer;
-
-        public MessageBase(string aMessageClass, bool aFromServer)
+ 
+        public MessageBase(string aMessageClass)
         {
             MessageClass = aMessageClass;
-            FromServer = aFromServer;
         }
 
         public string GetAsJson()

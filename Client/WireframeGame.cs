@@ -58,7 +58,7 @@ namespace BlowtorchesAndGunpowder
             //DrawToBuffer(grafx.Graphics);
             //this.WindowState = FormWindowState.Maximized;
             Task.Run(() => _gameClient.Start());
-            _gameClient.SendMessage(new ClientAction(false).GetAsJson());
+            _gameClient.SendMessage(new ClientEvent(ClientEventEnum.Joining).GetAsJson());
             stopWatch.Start();
             _totalTimeElapsed = stopWatch.Elapsed;
             _totalTimeElapsedWhenUpdateScreen = _totalTimeElapsed;
