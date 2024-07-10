@@ -6,13 +6,15 @@ namespace BlowtorchesAndGunpowder
 {
     public class ClientAction : MessageBase
     {
-        public bool IsShooting;
         public RotationEnum fRotationType = RotationEnum.None;
+        public bool fIsThrusting;
+        public bool fIsShooting;
 
-        public ClientAction(bool aIsShooting, RotationEnum aRotationType) : base("ClientAction")
+        public ClientAction(RotationEnum aRotationType, bool aIsThrusting, bool aIsShooting) : base("ClientAction")
         {
-            IsShooting = aIsShooting;
             fRotationType = aRotationType;
+            fIsThrusting = aIsThrusting;
+            fIsShooting = aIsShooting;
         }
         public static ClientAction CreateFromJson(string aActionJson)
         {

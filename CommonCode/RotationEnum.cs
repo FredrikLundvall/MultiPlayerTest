@@ -4,5 +4,5 @@ using System.Text;
 
 namespace BlowtorchesAndGunpowder
 {
-    public enum RotationEnum { None = 0, left = 1, Right = 2 }
+    public enum RotationEnum { None = 0, Left = 1, Right = 2 }
 }

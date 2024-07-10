@@ -61,7 +61,7 @@ namespace BlowtorchesAndGunpowder
             else if (aDatagram.EndsWith("\"fMessageClass\":\"ClientAction\"}"))
             {
                 var clientAction = ClientAction.CreateFromJson(aDatagram);
-                if (clientAction.IsShooting)
+                if (clientAction.fIsShooting)
                 {
                     if(!fGameState.fPlayerShoot.ContainsKey(0))
                         fGameState.fPlayerShoot.Add(0, true);
