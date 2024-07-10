@@ -7,12 +7,12 @@ namespace BlowtorchesAndGunpowder
 {
     public class Settings
     {
-        public readonly string ServerIp;
-        public readonly int ServerPort;
+        public readonly string fServerIp;
+        public readonly int fServerPort;
         public Settings(string aServerIp, int aServerPort)
         {
-            ServerIp = aServerIp;
-            ServerPort = aServerPort;
+            fServerIp = aServerIp;
+            fServerPort = aServerPort;
         }
     }
 }

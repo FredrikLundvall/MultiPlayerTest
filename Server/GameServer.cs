@@ -40,10 +40,10 @@ namespace BlowtorchesAndGunpowder
 
         private void InterpretIncommingMessage(IPEndPoint aRemoteEndPoint, string aDatagram)
         {
-            if (aDatagram.EndsWith("\"MessageClass\":\"ClientEvent\"}"))
+            if (aDatagram.EndsWith("\"fMessageClass\":\"ClientEvent\"}"))
             {
                 var clientEvent = ClientEvent.CreateFromJson(aDatagram);
-                if (clientEvent.ClientEventType == ClientEventEnum.Joining)
+                if (clientEvent.fClientEventType == ClientEventEnum.Joining)
                 {
                     if (!fAllClientEndpoints.Values.Any(s => s.Address.ToString() == aRemoteEndPoint.Address.ToString()))
                     {
@@ -53,18 +53,18 @@ namespace BlowtorchesAndGunpowder
                         LogToConsole("Adding new client {0}", aRemoteEndPoint.Address.ToString());
                         var serverEvent = new ServerEvent(ServerEventEnum.Admitting, clientIndex.ToString());
                         SendMessage(clientIpEndPoint, serverEvent.GetAsJson());
-                        if (!fGameState.PlayerShip.ContainsKey(clientIndex))
-                            fGameState.PlayerShip.Add(clientIndex, new GameObject(320, 320, 0));
+                        if (!fGameState.fPlayerShip.ContainsKey(clientIndex))
+                            fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 0));
                     }
                 }
             }
-            else if (aDatagram.EndsWith("\"MessageClass\":\"ClientAction\"}"))
+            else if (aDatagram.EndsWith("\"fMessageClass\":\"ClientAction\"}"))
             {
                 var clientAction = ClientAction.CreateFromJson(aDatagram);
                 if (clientAction.IsShooting)
                 {
-                    if(!fGameState.PlayerShoot.ContainsKey(0))
-                        fGameState.PlayerShoot.Add(0, true);
+                    if(!fGameState.fPlayerShoot.ContainsKey(0))
+                        fGameState.fPlayerShoot.Add(0, true);
                     SendMessageToAllClients(fGameState.GetAsJson());
                 }
             }
@@ -97,13 +97,13 @@ namespace BlowtorchesAndGunpowder
             udpSender.Send(datagram, datagram.Length, aIpEndPoint);
             LogToConsole("Sending data to {0} - {1}", aIpEndPoint.ToString(), aMessage);
         }
-        private void LogToConsole(string format, object arg0)
+        private void LogToConsole(string aFormat, object aArg0)
         {
-            LogToConsole(format, arg0, null);
+            LogToConsole(aFormat, aArg0, null);
         }
-        private void LogToConsole(string format, object arg0, object arg1)
+        private void LogToConsole(string aFormat, object aArg0, object aArg1)
         {
-            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " " + format, arg0, arg1);
+            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " " + aFormat, aArg0, aArg1);
         }
     }
 }

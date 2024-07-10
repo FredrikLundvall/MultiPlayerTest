@@ -54,18 +54,18 @@ namespace BlowtorchesAndGunpowder
         }
         private void InterpretIncommingMessage(IPEndPoint aRemoteEndPoint, string aDatagram)
         {
-            if (aDatagram.EndsWith("\"MessageClass\":\"GameState\"}"))
+            if (aDatagram.EndsWith("\"fMessageClass\":\"GameState\"}"))
             {
                 fGameState = GameState.CreateFromJson(aDatagram);
-                if (fGameState.PlayerShoot[fClientIndex])
+                if (fGameState.fPlayerShoot[fClientIndex])
                 {
                     fTextLog.AddLog(String.Format("Shooting"));
                 }
             }
-            else if (aDatagram.EndsWith("\"MessageClass\":\"ServerEvent\"}"))
+            else if (aDatagram.EndsWith("\"fMessageClass\":\"ServerEvent\"}"))
             {
                 var serverEvent = ServerEvent.CreateFromJson(aDatagram);
-                if (serverEvent.ServerEventType == ServerEventEnum.Admitting)
+                if (serverEvent.fServerEventType == ServerEventEnum.Admitting)
                 {
                     fTextLog.AddLog(String.Format("Admitted"));
                     Int32.TryParse(serverEvent.Value, out fClientIndex);

@@ -20,8 +20,8 @@ namespace BlowtorchesAndGunpowder
 
         private void SettingsForm_Load(object sender, EventArgs e)
         {
-            serverIpTxt.Text = _settings.ServerIp;
-            serverPortTxt.Text = _settings.ServerPort.ToString();
+            serverIpTxt.Text = _settings.fServerIp;
+            serverPortTxt.Text = _settings.fServerPort.ToString();
         }
 
         private void saveBtn_Click(object sender, EventArgs e)

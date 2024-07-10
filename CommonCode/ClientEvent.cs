@@ -6,11 +6,11 @@ namespace BlowtorchesAndGunpowder
 {
     public class ClientEvent : MessageBase
     {
-        public ClientEventEnum ClientEventType;
+        public ClientEventEnum fClientEventType;
 
         public ClientEvent(ClientEventEnum aEventType) : base("ClientEvent")
         {
-            ClientEventType = aEventType;
+            fClientEventType = aEventType;
         }
         public static ClientEvent CreateFromJson(string aActionJson)
         {

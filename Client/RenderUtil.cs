@@ -9,14 +9,14 @@ namespace BlowtorchesAndGunpowder
     {
         static public readonly PointF[] ShipLocalPoints = new PointF[4] { new Point(-4, 5), new Point(4, 5), new Point(0, -5), new Point(-4, 5) };
 
-        static public PointF[] GetWorldPoints(PointF[] localPoints, float positionX, float positionY, float direction)
+        static public PointF[] GetWorldPoints(PointF[] aLocalPoints, float aPositionX, float aPositionY, float aDirection)
         {
             Matrix myMatrix = new Matrix();
-            PointF[] worldPoints = new PointF[localPoints.Length];
-            localPoints.CopyTo(worldPoints, 0);
+            PointF[] worldPoints = new PointF[aLocalPoints.Length];
+            aLocalPoints.CopyTo(worldPoints, 0);
             myMatrix.Reset();
-            myMatrix.Rotate(450 - direction * 57.29577951f);
-            myMatrix.Translate(positionX, positionY, MatrixOrder.Append);
+            myMatrix.Rotate(450 - aDirection * 57.29577951f);
+            myMatrix.Translate(aPositionX, aPositionY, MatrixOrder.Append);
             myMatrix.TransformPoints(worldPoints);
             return worldPoints;
         }

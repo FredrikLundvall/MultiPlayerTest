@@ -6,12 +6,12 @@ namespace BlowtorchesAndGunpowder
 {
     public class ServerEvent : MessageBase
     {
-        public ServerEventEnum ServerEventType;
+        public ServerEventEnum fServerEventType;
         public string Value;
 
         public ServerEvent(ServerEventEnum aEventType, string aValue) : base("ServerEvent")
         {
-            ServerEventType = aEventType;
+            fServerEventType = aEventType;
             Value = aValue;
         }
         public static ServerEvent CreateFromJson(string aActionJson)

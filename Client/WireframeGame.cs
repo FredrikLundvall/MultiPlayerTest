@@ -174,13 +174,13 @@ namespace BlowtorchesAndGunpowder
                 g.DrawLines(_heroShotPen, _heroShotList[i].GetWorldPoints());
             //Draw server graphics
             var gameState = _gameClient.GetGameState();
-            foreach(var playerShip in gameState.PlayerShip)
+            foreach(var playerShip in gameState.fPlayerShip)
             {
                 var translatedPoints = RenderUtil.GetWorldPoints(
                         RenderUtil.ShipLocalPoints,
-                        playerShip.Value.PositionX,
-                        playerShip.Value.PositionY,
-                        playerShip.Value.Direction
+                        playerShip.Value.fPositionX,
+                        playerShip.Value.fPositionY,
+                        playerShip.Value.fDirection
                         );
 
                 if (playerShip.Key == _gameClient.GetClientIndex())

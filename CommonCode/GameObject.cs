@@ -7,15 +7,15 @@ namespace BlowtorchesAndGunpowder
 {
     public class GameObject
     {
-        public float PositionX = 0;
-        public float PositionY = 0;
-        public float Direction = 1.570796326794896619f;
+        public float fPositionX = 0;
+        public float fPositionY = 0;
+        public float fDirection = 1.570796326794896619f;
 
         public GameObject(float aPositionX, float aPositionY, float aDirection)
         {
-            PositionX = aPositionX;
-            PositionY = aPositionY;
-            Direction = aDirection;
+            fPositionX = aPositionX;
+            fPositionY = aPositionY;
+            fDirection = aDirection;
         }
     }
 }

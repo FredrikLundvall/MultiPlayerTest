@@ -5,23 +5,23 @@ namespace BlowtorchesAndGunpowder
 {
     public class Shot : RendereableObject
     {
-        public Shot(TimeSpan totalElapsedTime, PointF position, float direction, PointF startSpeed)
+        public Shot(TimeSpan aTotalElapsedTime, PointF aPosition, float aDirection, PointF aStartSpeed)
         {
-            _removeTime = totalElapsedTime + new TimeSpan(0, 0, 0, 0, 4000);
+            fRemoveTime = aTotalElapsedTime + new TimeSpan(0, 0, 0, 0, 4000);
 ;
-            _thrustorsForce = 30000f;
+            fThrustorsForce = 30000f;
 
-            _position.X = position.X;
-            _position.Y = position.Y;
-            _direction = direction;
-            _speedVector.X = startSpeed.X;//TODO: Denna bör inte vara lika hela tiden, utan räknas ut efter tids-spannet
-            _speedVector.Y = startSpeed.Y;
-            _localPoints = new PointF[2] { new Point(0, -5), new Point(0, -8) };
+            fPosition.X = aPosition.X;
+            fPosition.Y = aPosition.Y;
+            fDirection = aDirection;
+            fSpeedVector.X = aStartSpeed.X;//TODO: Denna bör inte vara lika hela tiden, utan räknas ut efter tids-spannet
+            fSpeedVector.Y = aStartSpeed.Y;
+            fLocalPoints = new PointF[2] { new Point(0, -5), new Point(0, -8) };
             EngageForwardThrustors(new TimeSpan(0, 0, 0, 0, 20));
         }
-        public bool IsTimeToRemove(TimeSpan totalElapsedTime)
+        public bool IsTimeToRemove(TimeSpan aTotalElapsedTime)
         {
-            return totalElapsedTime > _removeTime;
+            return aTotalElapsedTime > fRemoveTime;
         }
     }
 }

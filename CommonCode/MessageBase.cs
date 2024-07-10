@@ -6,11 +6,11 @@ namespace BlowtorchesAndGunpowder
 {
     public abstract class MessageBase
     {
-        public string MessageClass;
+        public string fMessageClass;
  
         public MessageBase(string aMessageClass)
         {
-            MessageClass = aMessageClass;
+            fMessageClass = aMessageClass;
         }
 
         public string GetAsJson()

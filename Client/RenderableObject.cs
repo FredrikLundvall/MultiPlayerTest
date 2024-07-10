@@ -6,110 +6,110 @@ namespace BlowtorchesAndGunpowder
 {
     public abstract class RendereableObject
     {
-        protected float _thrustorsForce = 60f;
-        protected float _rotationForce = 4f;
-        protected TimeSpan _removeTime = new TimeSpan(0);
+        protected float fThrustorsForce = 60f;
+        protected float fRotationForce = 4f;
+        protected TimeSpan fRemoveTime = new TimeSpan(0);
 
-        protected PointF[] _localPoints;
-        protected PointF _position = new PointF(0, 0);
-        protected float _direction = 1.570796326794896619f;
-        protected PointF _speedVector = new PointF(0, 0);
-        protected Matrix _myMatrix = new Matrix();
+        protected PointF[] fLocalPoints;
+        protected PointF fPosition = new PointF(0, 0);
+        protected float fDirection = 1.570796326794896619f;
+        protected PointF fSpeedVector = new PointF(0, 0);
+        protected Matrix fMyMatrix = new Matrix();
 
 
         public float GetDirection()
         {
-            return _direction;
+            return fDirection;
         }
 
         public PointF GetPosition()
         {
-            return _position;
+            return fPosition;
         }
 
         public PointF GetSpeedVector()
         {
-            return _speedVector;
+            return fSpeedVector;
         }
 
         public PointF[] GetWorldPoints()
         {
-            PointF[] worldPoints = new PointF[_localPoints.Length];
-            _localPoints.CopyTo(worldPoints, 0);
-            _myMatrix.Reset();
-            _myMatrix.Rotate(450 - _direction * 57.29577951f);
-            _myMatrix.Translate(_position.X, _position.Y, MatrixOrder.Append);
-            _myMatrix.TransformPoints(worldPoints);
+            PointF[] worldPoints = new PointF[fLocalPoints.Length];
+            fLocalPoints.CopyTo(worldPoints, 0);
+            fMyMatrix.Reset();
+            fMyMatrix.Rotate(450 - fDirection * 57.29577951f);
+            fMyMatrix.Translate(fPosition.X, fPosition.Y, MatrixOrder.Append);
+            fMyMatrix.TransformPoints(worldPoints);
             return worldPoints;
         }
 
         public void RotateLeft(TimeSpan aTimeElapsed)
         {
-            _direction += (float)(_rotationForce * aTimeElapsed.TotalSeconds);
+            fDirection += (float)(fRotationForce * aTimeElapsed.TotalSeconds);
         }
 
         public void RotateRight(TimeSpan aTimeElapsed)
         {
-            _direction -= (float)(_rotationForce * aTimeElapsed.TotalSeconds);
+            fDirection -= (float)(fRotationForce * aTimeElapsed.TotalSeconds);
         }
 
         public void EngageForwardThrustors(TimeSpan aTimeElapsed)
         {
-            _speedVector.X += (float)(Math.Cos(_direction) * _thrustorsForce * aTimeElapsed.TotalSeconds);
-            _speedVector.Y -= (float)(Math.Sin(_direction) * _thrustorsForce * aTimeElapsed.TotalSeconds);
+            fSpeedVector.X += (float)(Math.Cos(fDirection) * fThrustorsForce * aTimeElapsed.TotalSeconds);
+            fSpeedVector.Y -= (float)(Math.Sin(fDirection) * fThrustorsForce * aTimeElapsed.TotalSeconds);
         }
 
-        public void CalcNewPosition(TimeSpan aTimeElapsed, RectangleF bounds)
+        public void CalcNewPosition(TimeSpan aTimeElapsed, RectangleF aBounds)
         {
-            _position.Y += (float)(_speedVector.Y * aTimeElapsed.TotalSeconds);
-            _position.X += (float)(_speedVector.X * aTimeElapsed.TotalSeconds);
-            CheckBounds(bounds);
+            fPosition.Y += (float)(fSpeedVector.Y * aTimeElapsed.TotalSeconds);
+            fPosition.X += (float)(fSpeedVector.X * aTimeElapsed.TotalSeconds);
+            CheckBounds(aBounds);
         }
 
-        private void CheckBounds(RectangleF bounds)
+        private void CheckBounds(RectangleF aBounds)
         {
-            if (_position.X < bounds.Left)
+            if (fPosition.X < aBounds.Left)
             {
-                BounceX(bounds.Left - _position.X);
+                BounceX(aBounds.Left - fPosition.X);
             }
-            else if (_position.X > bounds.Right)
+            else if (fPosition.X > aBounds.Right)
             {
-                BounceX(bounds.Right - _position.X);
+                BounceX(aBounds.Right - fPosition.X);
             }
 
-            if (_position.Y < bounds.Top)
+            if (fPosition.Y < aBounds.Top)
             {
-                BounceY(bounds.Top - _position.Y);
+                BounceY(aBounds.Top - fPosition.Y);
             }
-            else if (_position.Y > bounds.Bottom)
+            else if (fPosition.Y > aBounds.Bottom)
             {
-                BounceY(bounds.Bottom - _position.Y);
+                BounceY(aBounds.Bottom - fPosition.Y);
             }
         }
-        private void BounceX(float deltaX)
+        private void BounceX(float aDeltaX)
         {
-            _position.X += deltaX * 2;
-            _speedVector.X = -_speedVector.X;
-            _direction = FlipX(_direction);
+            fPosition.X += aDeltaX * 2;
+            fSpeedVector.X = -fSpeedVector.X;
+            fDirection = FlipX(fDirection);
         }
 
-        private void BounceY(float deltaY)
+        private void BounceY(float aDeltaY)
         {
-            _position.Y += deltaY * 2;
-            _speedVector.Y = -_speedVector.Y;
-            _direction = FlipY(_direction);
+            fPosition.Y += aDeltaY * 2;
+            fSpeedVector.Y = -fSpeedVector.Y;
+            fDirection = FlipY(fDirection);
         }
 
-        private float FlipX(float angle)
+        private float FlipX(float aAngle)
         {
-            angle = (float)Math.PI - angle;
-            return angle;
+            aAngle = (float)Math.PI - aAngle;
+            return aAngle;
         }
 
-        private float FlipY(float angle)
+        private float FlipY(float aAngle)
         {
-            angle = (float)Math.PI * 2 - angle;
-            return angle;
+            aAngle = (float)Math.PI * 2 - aAngle;
+            return aAngle;
         }
 
     }
