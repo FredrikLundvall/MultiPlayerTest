@@ -163,14 +163,37 @@ namespace BlowtorchesAndGunpowder
             // Clear the graphics buffer
             g.Clear(Color.Black);
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            g.DrawLines(_heroShipPen, _heroShip.GetWorldPoints());
-            for(int i = 0; i < _heroShotList.Count; i++)
-                g.DrawLines(_heroShotPen, _heroShotList[i].GetWorldPoints());
             // Draw information strings.
             //g.DrawString("Click enter to toggle timed display refresh " + timer1.Enabled.ToString() , OutputFont, Brushes.White, 10, 10);
             g.DrawString(string.Format("Direction: {0:F2} radians", _heroShip.GetDirection()), OutputFont, Brushes.White, 10, 34);
             String[] allRows = _gameClient.GetLog();
             g.DrawString(String.Join(Environment.NewLine, allRows) + Environment.NewLine, OutputFont, Brushes.LightBlue, new RectangleF(10, 50, 1900, 200));
+            //Draw local graphics
+            g.DrawLines(_heroShipPen, _heroShip.GetWorldPoints());
+            for (int i = 0; i < _heroShotList.Count; i++)
+                g.DrawLines(_heroShotPen, _heroShotList[i].GetWorldPoints());
+            //Draw server graphics
+            var gameState = _gameClient.GetGameState();
+            foreach(var playerShip in gameState.PlayerShip)
+            {
+                var translatedPoints = RenderUtil.GetWorldPoints(
+                        RenderUtil.ShipLocalPoints,
+                        playerShip.Value.PositionX,
+                        playerShip.Value.PositionY,
+                        playerShip.Value.Direction
+                        );
+
+                if (playerShip.Key == _gameClient.GetClientIndex())
+                {
+                    g.FillPolygon(Brushes.DarkSlateGray, translatedPoints);
+                    g.DrawLines(_heroShipPen, translatedPoints);
+                }
+                else
+                {
+                    g.FillPolygon(Brushes.DarkRed, translatedPoints);
+                    g.DrawLines(_heroShipPen, translatedPoints);
+                }
+            }
         }
         protected override void OnPaint(PaintEventArgs e)
         {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
+using System.Drawing;
 
 namespace BlowtorchesAndGunpowder
 {
@@ -14,7 +14,8 @@ namespace BlowtorchesAndGunpowder
         const int UDP_CLIENT_PORT = 11001;
         private bool fStarted = false;
         private IPEndPoint fLocalEndPoint = new IPEndPoint(IPAddress.Loopback, UDP_SERVER_PORT);
-        private List<IPEndPoint> fAllClientEndpoints = new List<IPEndPoint>();
+        private Dictionary<int, IPEndPoint> fAllClientEndpoints = new Dictionary<int, IPEndPoint>();
+        private GameState fGameState = new GameState();
 
         public void Start()
         {
@@ -42,15 +43,18 @@ namespace BlowtorchesAndGunpowder
             if (aDatagram.EndsWith("\"MessageClass\":\"ClientEvent\"}"))
             {
                 var clientEvent = ClientEvent.CreateFromJson(aDatagram);
-                if (clientEvent.EventType == ClientEventEnum.Joining)
+                if (clientEvent.ClientEventType == ClientEventEnum.Joining)
                 {
-                    if (!fAllClientEndpoints.Any(s => s.Address.ToString() == aRemoteEndPoint.Address.ToString()))
+                    if (!fAllClientEndpoints.Values.Any(s => s.Address.ToString() == aRemoteEndPoint.Address.ToString()))
                     {
-                        var ipEndPoint = new IPEndPoint(aRemoteEndPoint.Address, UDP_CLIENT_PORT);
-                        fAllClientEndpoints.Add(ipEndPoint);
+                        var clientIpEndPoint = new IPEndPoint(aRemoteEndPoint.Address, UDP_CLIENT_PORT);
+                        int clientIndex = fAllClientEndpoints.Count;
+                        fAllClientEndpoints.Add(clientIndex, clientIpEndPoint);
                         LogToConsole("Adding new client {0}", aRemoteEndPoint.Address.ToString());
-                        var serverEvent = new ServerEvent(ServerEventEnum.Admitting);
-                        SendMessage(ipEndPoint, serverEvent.GetAsJson());
+                        var serverEvent = new ServerEvent(ServerEventEnum.Admitting, clientIndex.ToString());
+                        SendMessage(clientIpEndPoint, serverEvent.GetAsJson());
+                        if (!fGameState.PlayerShip.ContainsKey(clientIndex))
+                            fGameState.PlayerShip.Add(clientIndex, new GameObject(320, 320, 0));
                     }
                 }
             }
@@ -59,9 +63,9 @@ namespace BlowtorchesAndGunpowder
                 var clientAction = ClientAction.CreateFromJson(aDatagram);
                 if (clientAction.IsShooting)
                 {
-                    var gameState = new GameState();
-                    gameState.PlayerShoot.Add(0, true);
-                    SendMessageToAllClients(gameState.GetAsJson());
+                    if(!fGameState.PlayerShoot.ContainsKey(0))
+                        fGameState.PlayerShoot.Add(0, true);
+                    SendMessageToAllClients(fGameState.GetAsJson());
                 }
             }
         }
@@ -77,7 +81,7 @@ namespace BlowtorchesAndGunpowder
             udpSender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             udpSender.Client.Bind(fLocalEndPoint);
             byte[] datagram = Encoding.ASCII.GetBytes(aMessage);
-            foreach(var endpoint in fAllClientEndpoints)
+            foreach(var endpoint in fAllClientEndpoints.Values)
             {
                 udpSender.Send(datagram, datagram.Length, endpoint);
                 LogToConsole("Sending data to {0} - {1}", endpoint.ToString(), aMessage);

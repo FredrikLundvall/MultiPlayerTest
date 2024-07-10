@@ -9,6 +9,7 @@
     <Import_RootNamespace>CommonCode</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)GameObject.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ServerEventEnum.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ServerEvent.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ClientEvent.cs" />

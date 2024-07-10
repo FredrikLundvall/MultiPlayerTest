@@ -16,6 +16,8 @@ namespace BlowtorchesAndGunpowder
         UdpClient fUdpSender = new UdpClient();
         IPEndPoint fServerEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP), UDP_SERVER_PORT);
         private TextLog fTextLog = new TextLog();
+        private int fClientIndex = 0;
+        private GameState fGameState = new GameState();
         public GameClient()
         {
             //fUdpSender.ExclusiveAddressUse = false;
@@ -25,7 +27,6 @@ namespace BlowtorchesAndGunpowder
             //fUdpReceiver.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             //fUdpReceiver.Client.Bind(fLocalEndPoint);
         }
-
         private bool fStarted = false;
         public void Start()
         {
@@ -51,23 +52,26 @@ namespace BlowtorchesAndGunpowder
                 }
             }
         }
-
         private void InterpretIncommingMessage(IPEndPoint aRemoteEndPoint, string aDatagram)
         {
             if (aDatagram.EndsWith("\"MessageClass\":\"GameState\"}"))
             {
-                var gameState = GameState.CreateFromJson(aDatagram);
-                if (gameState.PlayerShoot[0])
+                fGameState = GameState.CreateFromJson(aDatagram);
+                if (fGameState.PlayerShoot[fClientIndex])
+                {
                     fTextLog.AddLog(String.Format("Shooting"));
+                }
             }
             else if (aDatagram.EndsWith("\"MessageClass\":\"ServerEvent\"}"))
             {
                 var serverEvent = ServerEvent.CreateFromJson(aDatagram);
-                if (serverEvent.EventType == ServerEventEnum.Admitting)
+                if (serverEvent.ServerEventType == ServerEventEnum.Admitting)
+                {
                     fTextLog.AddLog(String.Format("Admitted"));
+                    Int32.TryParse(serverEvent.Value, out fClientIndex);
+                }
             }
         }
-
         public void Stop()
         {
             fStarted = false;
@@ -77,6 +81,14 @@ namespace BlowtorchesAndGunpowder
             byte[] datagram = Encoding.ASCII.GetBytes(aMessage);
             fUdpSender.Send(datagram, datagram.Length, fServerEndPoint);
             fTextLog.AddLog(String.Format("Sending data to {0} - {1}", fServerEndPoint.ToString(), aMessage));
+        }
+        public GameState GetGameState()
+        {
+            return fGameState;
+        }
+        public int GetClientIndex()
+        {
+            return fClientIndex;
         }
         public string[] GetLog()
         {

@@ -63,6 +63,7 @@
       <DependentUpon>GameSettingsForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="RenderUtil.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="TextLog.cs" />
     <Compile Include="User32Import.cs" />
