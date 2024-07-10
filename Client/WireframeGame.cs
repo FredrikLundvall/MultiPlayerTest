@@ -121,7 +121,7 @@ namespace BlowtorchesAndGunpowder
             {
                 _heroShotList.Add(new Shot(_totalTimeElapsed, _heroShip.GetPosition(), _heroShip.GetDirection(), _heroShip.GetSpeedVector()));
                 _totalTimeElapsedWhenLastShot = _totalTimeElapsed;
-                _gameClient.SendMessage(new ClientAction(true).GetAsJson());
+                _gameClient.SendMessage(new ClientAction(true, RotationEnum.None).GetAsJson());
             }
         }
         private void DoChange(TimeSpan aTimeElapsed)
