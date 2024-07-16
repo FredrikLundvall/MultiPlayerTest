@@ -10,44 +10,54 @@ namespace BlowtorchesAndGunpowder
 {
     internal class GameClient
     {
-        const int UDP_SERVER_PORT = 11000;
-        const int UDP_CLIENT_PORT = 11001;
-        const string SERVER_IP = "127.0.0.1";
+        public const int UDP_RECEIVE_TIMEOUT = 5000;
+        public const int UDP_SERVER_PORT = 11000;
+        public const string SERVER_IP = "127.0.0.1"; //192.168.3.17
+        public const int UDP_CLIENT_PORT = 11001;
         UdpClient fUdpSender = new UdpClient();
-        IPEndPoint fServerEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP), UDP_SERVER_PORT);
+        IPEndPoint fServerEndPoint = null;
         private TextLog fTextLog = new TextLog();
-        private int fClientIndex = 0;
+        private int fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
         private GameState fGameState = new GameState();
-        public GameClient()
+        Settings fSettings = null;
+
+        public GameClient(Settings aSettings)
         {
-            //fUdpSender.ExclusiveAddressUse = false;
-            //fUdpSender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            //fUdpSender.Client.Bind(fLocalEndPoint);
-            //fUdpReceiver.ExclusiveAddressUse = false;
-            //fUdpReceiver.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            //fUdpReceiver.Client.Bind(fLocalEndPoint);
+            fSettings = aSettings;
+            fServerEndPoint = new IPEndPoint(IPAddress.Parse(fSettings.fServerIp), fSettings.fServerPort);
         }
         private bool fStarted = false;
         public void Start()
         {
             fStarted = true;
-            using (var udpClient = new UdpClient(UDP_CLIENT_PORT, AddressFamily.InterNetwork))
+            using (var udpClient = new UdpClient(fSettings.fClientPort, AddressFamily.InterNetwork))
             {
-                //var remoteEndPoint = new IPEndPoint(IPAddress.Parse(SERVER_IP), UDP_CLIENT_PORT);
-                var remoteEndPoint = default(IPEndPoint);//new IPEndPoint(IPAddress.Any, UDP_CLIENT_PORT);
-                //udpClient.ExclusiveAddressUse = false;
-                //udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                //udpClient.Client.Bind(fLocalEndPoint);
+                udpClient.Client.ReceiveTimeout = UDP_RECEIVE_TIMEOUT;
+                var remoteEndPoint = default(IPEndPoint);
                 fTextLog.AddLog(String.Format("Listening for udp {0}", udpClient.Client.LocalEndPoint.ToString()));
                 while (fStarted)
                 {
                     //IPEndPoint object will allow us to read datagrams sent from any source.
-                    var receivedResults = udpClient.Receive(ref remoteEndPoint);
-                    if (remoteEndPoint.ToString() == fServerEndPoint.ToString())
+                    try
                     {
-                        var datagram = Encoding.ASCII.GetString(receivedResults);
-                        fTextLog.AddLog(String.Format("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram));
-                        InterpretIncommingMessage(remoteEndPoint, datagram);
+                        var receivedResults = udpClient.Receive(ref remoteEndPoint);
+                        if (remoteEndPoint.ToString() == fServerEndPoint.ToString())
+                        {
+                            var datagram = Encoding.ASCII.GetString(receivedResults);
+                            fTextLog.AddLog(String.Format("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram));
+                            InterpretIncommingMessage(remoteEndPoint, datagram);
+                        }
+                    }
+                    catch (SocketException e)
+                    {
+                        if (e.ErrorCode == 10060)
+                        {
+                            fTextLog.AddLog("Timeout");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        fTextLog.AddLog(String.Format("Exception when receiving {0}", e.Message));
                     }
                 }
             }
@@ -57,7 +67,7 @@ namespace BlowtorchesAndGunpowder
             if (aDatagram.EndsWith("\"fMessageClass\":\"GameState\"}"))
             {
                 fGameState = GameState.CreateFromJson(aDatagram);
-                if (fGameState.fPlayerShoot[fClientIndex])
+                if (fGameState.fPlayerShoot.ContainsKey(MessageBase.NOT_JOINED_CLIENT_INDEX) && fGameState.fPlayerShoot[fClientIndex])
                 {
                     fTextLog.AddLog(String.Format("Shooting"));
                 }
@@ -65,16 +75,22 @@ namespace BlowtorchesAndGunpowder
             else if (aDatagram.EndsWith("\"fMessageClass\":\"ServerEvent\"}"))
             {
                 var serverEvent = ServerEvent.CreateFromJson(aDatagram);
-                if (serverEvent.fServerEventType == ServerEventEnum.Admitting)
+                if (serverEvent.fServerEventType == ServerEventEnum.Accepting)
                 {
-                    fTextLog.AddLog(String.Format("Admitted"));
-                    Int32.TryParse(serverEvent.Value, out fClientIndex);
+                    Int32.TryParse(serverEvent.fValue, out fClientIndex);
+                    fTextLog.AddLog(String.Format("Admitted as index {0}", fClientIndex));
+                }
+                else if(serverEvent.fServerEventType == ServerEventEnum.Rejecting)
+                {
+                    fTextLog.AddLog(String.Format("Rejected as index {0}", fClientIndex));
+                    fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
                 }
             }
         }
         public void Stop()
         {
             fStarted = false;
+            fTextLog.AddLog("Stopped listening");
         }
         public void SendMessage(String aMessage)
         {
@@ -98,6 +114,11 @@ namespace BlowtorchesAndGunpowder
         {
             Stop();
             fUdpSender.Close();
+        }
+        public void ChangeSetting(Settings aSettings)
+        {
+            aSettings = fSettings;
+            fServerEndPoint = new IPEndPoint(IPAddress.Parse(fSettings.fServerIp), fSettings.fServerPort);
         }
     }
 }

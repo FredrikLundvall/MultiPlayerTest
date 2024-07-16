@@ -4,5 +4,5 @@ using System.Text;
 
 namespace BlowtorchesAndGunpowder
 {
-    public enum ServerEventEnum { Admitting = 0, Kicking = 1 }
+    public enum ServerEventEnum { Accepting = 0, Rejecting = 1 }
 }

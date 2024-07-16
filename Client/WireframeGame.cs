@@ -22,7 +22,9 @@ namespace BlowtorchesAndGunpowder
         Pen fHeroShipPen = new Pen(Color.Cornsilk);
         Ship fHeroShip = new Ship();
         List<Shot> fHeroShotList = new List<Shot>();
-        GameClient fGameClient = new GameClient();
+        static Settings fSettings = new Settings("Player", GameClient.SERVER_IP, GameClient.UDP_SERVER_PORT, GameClient.UDP_CLIENT_PORT);
+        GameClient fGameClient = new GameClient(fSettings);
+        Task fRunningTask = null;
 
         public WireframeGame() : base()
         {
@@ -57,8 +59,12 @@ namespace BlowtorchesAndGunpowder
             //DoChange();
             //DrawToBuffer(grafx.Graphics);
             //this.WindowState = FormWindowState.Maximized;
-            Task.Run(() => fGameClient.Start());
-            fGameClient.SendMessage(new ClientEvent(ClientEventEnum.Joining).GetAsJson());
+            DialogResult settingsResult = ShowPauseForm();
+            fRunningTask = Task.Run(() => fGameClient.Start());
+            if (settingsResult == DialogResult.OK)
+            {
+                fGameClient.SendMessage(new ClientEvent(ClientEventEnum.Joining, fGameClient.GetClientIndex().ToString()).GetAsJson());
+            }
             fStopWatch.Start();
             fTotalTimeElapsed = fStopWatch.Elapsed;
             fTotalTimeElapsedWhenUpdateScreen = fTotalTimeElapsed;
@@ -70,23 +76,17 @@ namespace BlowtorchesAndGunpowder
             {
                 if (fPause)
                     return;
-                fPause = true;
-                //Cursor.Show();
-                GameSettingsForm settingsForm = new GameSettingsForm(new Settings("localhost", 4567));
-                DialogResult settingsResult = settingsForm.ShowDialog(this);
-                if (settingsResult == DialogResult.Abort)
+                DialogResult settingsResult = ShowPauseForm();
+                if (settingsResult == DialogResult.OK)
                 {
-                    fGameClient.Close();
-                    Close();
+                    fGameClient.SendMessage(new ClientEvent(ClientEventEnum.Leaving, fGameClient.GetClientIndex().ToString()).GetAsJson());
+                    fGameClient.Stop();
+                    fRunningTask.Wait(GameClient.UDP_RECEIVE_TIMEOUT);
+                    fGameClient.ChangeSetting(fSettings);
+                    fRunningTask = Task.Run(() => fGameClient.Start());
+                    fGameClient.SendMessage(new ClientEvent(ClientEventEnum.Joining, MessageBase.NOT_JOINED_CLIENT_INDEX.ToString()).GetAsJson());
                 }
-                else if (settingsResult == DialogResult.Cancel)
-                    fPause = false;
-                else if (settingsResult == DialogResult.OK)
-                {
-                    //_settings = settingsForm.GetSettings();
-                    fPause = false;
-                }
-                //Cursor.Hide();
+
             }
             if (fPause)
                 return;
@@ -108,6 +108,27 @@ namespace BlowtorchesAndGunpowder
                     UpdateScreen();
                 }
             }
+        }
+        private DialogResult ShowPauseForm()
+        {
+            fPause = true;
+            GameSettingsForm settingsForm = new GameSettingsForm(fSettings);
+            DialogResult settingsResult = settingsForm.ShowDialog(this);
+            if (settingsResult == DialogResult.Abort)
+            {
+                fGameClient.Close();
+                Close();
+            }
+            else if (settingsResult == DialogResult.Cancel)
+            {
+                fPause = false;
+            }
+            else if (settingsResult == DialogResult.OK)
+            {
+                fSettings = settingsForm.GetSettings();
+                fPause = false;
+            }
+            return settingsResult;
         }
         private void ProcessKeyState(TimeSpan aTimeElapsed)
         {
@@ -136,8 +157,10 @@ namespace BlowtorchesAndGunpowder
                 shooting = true;
             }
             //TODO: Don't send all the time...
-            if(rotation != RotationEnum.None || forwardThrustor || shooting)
-                fGameClient.SendMessage(new ClientAction(rotation, forwardThrustor, shooting).GetAsJson());
+            if (rotation != RotationEnum.None || forwardThrustor || shooting)
+            {
+                fGameClient.SendMessage(new ClientAction(fGameClient.GetClientIndex(), rotation, forwardThrustor, shooting).GetAsJson());
+            }
         }
         private void DoChange(TimeSpan aTimeElapsed)
         {

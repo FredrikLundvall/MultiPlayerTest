@@ -13,6 +13,7 @@ namespace BlowtorchesAndGunpowder
         const int UDP_SERVER_PORT = 11000;
         const int UDP_CLIENT_PORT = 11001;
         private bool fStarted = false;
+        private int fMaxClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
         private IPEndPoint fLocalEndPoint = new IPEndPoint(IPAddress.Loopback, UDP_SERVER_PORT);
         private Dictionary<int, IPEndPoint> fAllClientEndpoints = new Dictionary<int, IPEndPoint>();
         private GameState fGameState = new GameState();
@@ -29,11 +30,25 @@ namespace BlowtorchesAndGunpowder
                 LogToConsole("Listening for udp {0}", remoteEndPoint.ToString());
                 while (fStarted)
                 {
-                    //IPEndPoint object will allow us to read datagrams sent from any source.
-                    var receivedResults = udpClient.Receive(ref remoteEndPoint);
-                    var datagram = Encoding.ASCII.GetString(receivedResults);
-                    LogToConsole("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram);
-                    InterpretIncommingMessage(remoteEndPoint, datagram);
+                    try
+                    {
+                        //IPEndPoint object will allow us to read datagrams sent from any source.
+                        var receivedResults = udpClient.Receive(ref remoteEndPoint);
+                        var datagram = Encoding.ASCII.GetString(receivedResults);
+                        LogToConsole("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram);
+                        InterpretIncommingMessage(remoteEndPoint, datagram);
+                    }
+                    catch (SocketException e)
+                    {
+                        if (e.ErrorCode == 10060)
+                        {
+                            LogToConsole("{0}", "Timeout");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        LogToConsole("Exception when receiving {0}", e.Message);
+                    }
                 }
             }
         }
@@ -45,16 +60,34 @@ namespace BlowtorchesAndGunpowder
                 var clientEvent = ClientEvent.CreateFromJson(aDatagram);
                 if (clientEvent.fClientEventType == ClientEventEnum.Joining)
                 {
-                    if (!fAllClientEndpoints.Values.Any(s => s.Address.ToString() == aRemoteEndPoint.Address.ToString()))
+                    int clientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
+                    Int32.TryParse(clientEvent.fValue, out clientIndex);
+                    if (!fAllClientEndpoints.ContainsKey(clientIndex))
                     {
+                        fMaxClientIndex += 1;
+                        clientIndex = fMaxClientIndex;
                         var clientIpEndPoint = new IPEndPoint(aRemoteEndPoint.Address, UDP_CLIENT_PORT);
-                        int clientIndex = fAllClientEndpoints.Count;
                         fAllClientEndpoints.Add(clientIndex, clientIpEndPoint);
                         LogToConsole("Adding new client {0}", aRemoteEndPoint.Address.ToString());
-                        var serverEvent = new ServerEvent(ServerEventEnum.Admitting, clientIndex.ToString());
+                        var serverEvent = new ServerEvent(ServerEventEnum.Accepting, clientIndex.ToString());
                         SendMessage(clientIpEndPoint, serverEvent.GetAsJson());
                         if (!fGameState.fPlayerShip.ContainsKey(clientIndex))
                             fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 0));
+                    }
+                }
+                else if(clientEvent.fClientEventType == ClientEventEnum.Leaving)
+                {
+                    int clientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
+                    Int32.TryParse(clientEvent.fValue, out clientIndex);
+                    var endpoint = fAllClientEndpoints[clientIndex];
+                    if(endpoint != null)
+                    {
+                        LogToConsole("Removing client {0}", aRemoteEndPoint.Address.ToString());
+                        var serverEvent = new ServerEvent(ServerEventEnum.Rejecting, clientIndex.ToString());
+                        SendMessage(endpoint, serverEvent.GetAsJson());
+                        fAllClientEndpoints.Remove(clientIndex);
+                        if (fGameState.fPlayerShip.ContainsKey(clientIndex))
+                            fGameState.fPlayerShip.Remove(clientIndex);
                     }
                 }
             }

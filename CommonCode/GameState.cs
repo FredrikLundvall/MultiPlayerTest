@@ -10,7 +10,7 @@ namespace BlowtorchesAndGunpowder
 {
     public class GameState : MessageBase
     {
-        public Dictionary<int,bool> fPlayerShoot = new Dictionary<int, bool>();
+        public Dictionary<int, bool> fPlayerShoot = new Dictionary<int, bool>();
         public Dictionary<int, GameObject> fPlayerShip = new Dictionary<int, GameObject>();
         public GameState() : base("GameState")
         {

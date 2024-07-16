@@ -6,6 +6,8 @@ namespace BlowtorchesAndGunpowder
 {
     public abstract class MessageBase
     {
+        public const int NOT_JOINED_CLIENT_INDEX = -1;
+
         public string fMessageClass;
  
         public MessageBase(string aMessageClass)
