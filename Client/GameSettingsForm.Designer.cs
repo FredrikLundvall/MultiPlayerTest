@@ -123,7 +123,6 @@
             this.label3.Size = new System.Drawing.Size(70, 13);
             this.label3.TabIndex = 8;
             this.label3.Text = "My username";
-            this.label3.Visible = false;
             // 
             // myUsernameTxt
             // 
@@ -132,7 +131,6 @@
             this.myUsernameTxt.Name = "myUsernameTxt";
             this.myUsernameTxt.Size = new System.Drawing.Size(124, 20);
             this.myUsernameTxt.TabIndex = 7;
-            this.myUsernameTxt.Visible = false;
             // 
             // label4
             // 

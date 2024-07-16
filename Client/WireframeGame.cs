@@ -61,9 +61,9 @@ namespace BlowtorchesAndGunpowder
             //this.WindowState = FormWindowState.Maximized;
             DialogResult settingsResult = ShowPauseForm();
             fRunningTask = Task.Run(() => fGameClient.Start());
-            if (settingsResult == DialogResult.OK)
+            if (settingsResult != DialogResult.Abort)
             {
-                fGameClient.SendMessage(new ClientEvent(ClientEventEnum.Joining, fGameClient.GetClientIndex().ToString()).GetAsJson());
+                fGameClient.SendMessage(new ClientEvent(fGameClient.GetClientIndex(), ClientEventEnum.Joining, fSettings.fUserName).GetAsJson());
             }
             fStopWatch.Start();
             fTotalTimeElapsed = fStopWatch.Elapsed;
@@ -79,12 +79,12 @@ namespace BlowtorchesAndGunpowder
                 DialogResult settingsResult = ShowPauseForm();
                 if (settingsResult == DialogResult.OK)
                 {
-                    fGameClient.SendMessage(new ClientEvent(ClientEventEnum.Leaving, fGameClient.GetClientIndex().ToString()).GetAsJson());
+                    fGameClient.SendMessage(new ClientEvent(fGameClient.GetClientIndex(), ClientEventEnum.Leaving, fSettings.fUserName).GetAsJson());
                     fGameClient.Stop();
                     fRunningTask.Wait(GameClient.UDP_RECEIVE_TIMEOUT);
                     fGameClient.ChangeSetting(fSettings);
                     fRunningTask = Task.Run(() => fGameClient.Start());
-                    fGameClient.SendMessage(new ClientEvent(ClientEventEnum.Joining, MessageBase.NOT_JOINED_CLIENT_INDEX.ToString()).GetAsJson());
+                    fGameClient.SendMessage(new ClientEvent(MessageBase.NOT_JOINED_CLIENT_INDEX, ClientEventEnum.Joining, fSettings.fUserName).GetAsJson());
                 }
 
             }

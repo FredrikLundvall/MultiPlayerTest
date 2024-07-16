@@ -77,12 +77,12 @@ namespace BlowtorchesAndGunpowder
                 var serverEvent = ServerEvent.CreateFromJson(aDatagram);
                 if (serverEvent.fServerEventType == ServerEventEnum.Accepting)
                 {
-                    Int32.TryParse(serverEvent.fValue, out fClientIndex);
-                    fTextLog.AddLog(String.Format("Admitted as index {0}", fClientIndex));
+                    fClientIndex = serverEvent.fClientIndex;
+                    fTextLog.AddLog(String.Format("Admitted as index {0} name {1}", fClientIndex, serverEvent.fValue));
                 }
                 else if(serverEvent.fServerEventType == ServerEventEnum.Rejecting)
                 {
-                    fTextLog.AddLog(String.Format("Rejected as index {0}", fClientIndex));
+                    fTextLog.AddLog(String.Format("Rejected as index {0} own index {1} name {2}", serverEvent.fClientIndex, fClientIndex, serverEvent.fValue));
                     fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
                 }
             }

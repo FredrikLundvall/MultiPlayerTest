@@ -6,11 +6,13 @@ namespace BlowtorchesAndGunpowder
 {
     public class ServerEvent : MessageBase
     {
+        public int fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
         public ServerEventEnum fServerEventType;
         public string fValue;
 
-        public ServerEvent(ServerEventEnum aEventType, string aValue) : base("ServerEvent")
+        public ServerEvent(int aClientIndex, ServerEventEnum aEventType, string aValue) : base("ServerEvent")
         {
+            fClientIndex = aClientIndex;
             fServerEventType = aEventType;
             fValue = aValue;
         }

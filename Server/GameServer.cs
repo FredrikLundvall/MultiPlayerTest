@@ -15,7 +15,7 @@ namespace BlowtorchesAndGunpowder
         private bool fStarted = false;
         private int fMaxClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
         private IPEndPoint fLocalEndPoint = new IPEndPoint(IPAddress.Loopback, UDP_SERVER_PORT);
-        private Dictionary<int, IPEndPoint> fAllClientEndpoints = new Dictionary<int, IPEndPoint>();
+        private Dictionary<int, Client> fClientList = new Dictionary<int, Client>();
         private GameState fGameState = new GameState();
 
         public void Start()
@@ -60,16 +60,15 @@ namespace BlowtorchesAndGunpowder
                 var clientEvent = ClientEvent.CreateFromJson(aDatagram);
                 if (clientEvent.fClientEventType == ClientEventEnum.Joining)
                 {
-                    int clientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
-                    Int32.TryParse(clientEvent.fValue, out clientIndex);
-                    if (!fAllClientEndpoints.ContainsKey(clientIndex))
+                    int clientIndex = clientEvent.fClientIndex;
+                    if (!fClientList.ContainsKey(clientIndex))
                     {
                         fMaxClientIndex += 1;
                         clientIndex = fMaxClientIndex;
                         var clientIpEndPoint = new IPEndPoint(aRemoteEndPoint.Address, UDP_CLIENT_PORT);
-                        fAllClientEndpoints.Add(clientIndex, clientIpEndPoint);
-                        LogToConsole("Adding new client {0}", aRemoteEndPoint.Address.ToString());
-                        var serverEvent = new ServerEvent(ServerEventEnum.Accepting, clientIndex.ToString());
+                        fClientList.Add(clientIndex, new Client(clientIndex, clientIpEndPoint, clientEvent.fValue));
+                        LogToConsole("Adding new client {0} as index {1} with username {2}", aRemoteEndPoint.Address.ToString(), clientIndex, clientEvent.fValue);
+                        var serverEvent = new ServerEvent(clientIndex, ServerEventEnum.Accepting, clientEvent.fValue);
                         SendMessage(clientIpEndPoint, serverEvent.GetAsJson());
                         if (!fGameState.fPlayerShip.ContainsKey(clientIndex))
                             fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 0));
@@ -77,15 +76,14 @@ namespace BlowtorchesAndGunpowder
                 }
                 else if(clientEvent.fClientEventType == ClientEventEnum.Leaving)
                 {
-                    int clientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
-                    Int32.TryParse(clientEvent.fValue, out clientIndex);
-                    var endpoint = fAllClientEndpoints[clientIndex];
-                    if(endpoint != null)
+                    int clientIndex = clientEvent.fClientIndex;
+                    var client = fClientList[clientIndex];
+                    if(client != null)
                     {
-                        LogToConsole("Removing client {0}", aRemoteEndPoint.Address.ToString());
-                        var serverEvent = new ServerEvent(ServerEventEnum.Rejecting, clientIndex.ToString());
-                        SendMessage(endpoint, serverEvent.GetAsJson());
-                        fAllClientEndpoints.Remove(clientIndex);
+                        LogToConsole("Removing client as index {1} with username {2}", aRemoteEndPoint.Address.ToString(), clientIndex, clientEvent.fValue);
+                        var serverEvent = new ServerEvent(clientIndex, ServerEventEnum.Rejecting, clientEvent.fValue);
+                        SendMessage(client.fEndPoint, serverEvent.GetAsJson());
+                        fClientList.Remove(clientIndex);
                         if (fGameState.fPlayerShip.ContainsKey(clientIndex))
                             fGameState.fPlayerShip.Remove(clientIndex);
                     }
@@ -114,10 +112,10 @@ namespace BlowtorchesAndGunpowder
             udpSender.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
             udpSender.Client.Bind(fLocalEndPoint);
             byte[] datagram = Encoding.ASCII.GetBytes(aMessage);
-            foreach(var endpoint in fAllClientEndpoints.Values)
+            foreach(var client in fClientList.Values)
             {
-                udpSender.Send(datagram, datagram.Length, endpoint);
-                LogToConsole("Sending data to {0} - {1}", endpoint.ToString(), aMessage);
+                udpSender.Send(datagram, datagram.Length, client.fEndPoint);
+                LogToConsole("Sending data to {0} - {1}", client.fEndPoint.ToString(), aMessage);
             }
         }
         public void SendMessage(IPEndPoint aIpEndPoint, String aMessage)
@@ -136,7 +134,11 @@ namespace BlowtorchesAndGunpowder
         }
         private void LogToConsole(string aFormat, object aArg0, object aArg1)
         {
-            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " " + aFormat, aArg0, aArg1);
+            LogToConsole(aFormat, aArg0, aArg1, null);
+        }
+        private void LogToConsole(string aFormat, object aArg0, object aArg1, object aArg2)
+        {
+            Console.WriteLine(DateTime.Now.ToString("HH:mm:ss") + " " + aFormat, aArg0, aArg1, aArg2);
         }
     }
 }
