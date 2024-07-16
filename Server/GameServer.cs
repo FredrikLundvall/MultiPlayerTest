@@ -68,10 +68,13 @@ namespace BlowtorchesAndGunpowder
                         var clientIpEndPoint = new IPEndPoint(aRemoteEndPoint.Address, UDP_CLIENT_PORT);
                         fClientList.Add(clientIndex, new Client(clientIndex, clientIpEndPoint, clientEvent.fValue));
                         LogToConsole("Adding new client {0} as index {1} with username {2}", aRemoteEndPoint.Address.ToString(), clientIndex, clientEvent.fValue);
-                        var serverEvent = new ServerEvent(clientIndex, ServerEventEnum.Accepting, clientEvent.fValue);
-                        SendMessage(clientIpEndPoint, serverEvent.GetAsJson());
+                        var serverAcceptingEvent = new ServerEvent(clientIndex, ServerEventEnum.Accepting, clientEvent.fValue);
+                        SendMessage(clientIpEndPoint, serverAcceptingEvent.GetAsJson());
                         if (!fGameState.fPlayerShip.ContainsKey(clientIndex))
                             fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 0));
+
+                        var serverEnteringEvent = new ServerEvent(clientIndex, ServerEventEnum.Entering, clientEvent.fValue);
+                        SendMessageToAllClients(serverEnteringEvent.GetAsJson());
                     }
                 }
                 else if(clientEvent.fClientEventType == ClientEventEnum.Leaving)
@@ -86,6 +89,9 @@ namespace BlowtorchesAndGunpowder
                         fClientList.Remove(clientIndex);
                         if (fGameState.fPlayerShip.ContainsKey(clientIndex))
                             fGameState.fPlayerShip.Remove(clientIndex);
+
+                        var serverExitingEvent = new ServerEvent(clientIndex, ServerEventEnum.Exiting, clientEvent.fValue);
+                        SendMessageToAllClients(serverExitingEvent.GetAsJson());
                     }
                 }
             }

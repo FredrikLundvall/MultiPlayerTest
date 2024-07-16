@@ -18,6 +18,7 @@ namespace BlowtorchesAndGunpowder
         IPEndPoint fServerEndPoint = null;
         private TextLog fTextLog = new TextLog();
         private int fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
+        private Dictionary<int, string> fClientNames = new Dictionary<int, string>();
         private GameState fGameState = new GameState();
         Settings fSettings = null;
 
@@ -78,12 +79,24 @@ namespace BlowtorchesAndGunpowder
                 if (serverEvent.fServerEventType == ServerEventEnum.Accepting)
                 {
                     fClientIndex = serverEvent.fClientIndex;
+                    fClientNames[serverEvent.fClientIndex] = serverEvent.fValue;
                     fTextLog.AddLog(String.Format("Admitted as index {0} name {1}", fClientIndex, serverEvent.fValue));
                 }
                 else if(serverEvent.fServerEventType == ServerEventEnum.Rejecting)
                 {
                     fTextLog.AddLog(String.Format("Rejected as index {0} own index {1} name {2}", serverEvent.fClientIndex, fClientIndex, serverEvent.fValue));
+                    fClientNames.Remove(serverEvent.fClientIndex);
                     fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
+                }
+                else if (serverEvent.fServerEventType == ServerEventEnum.Entering)
+                {
+                    fClientNames[serverEvent.fClientIndex] = serverEvent.fValue;
+                    fTextLog.AddLog(String.Format("Player entering index {0} name {1}", serverEvent.fClientIndex, serverEvent.fValue));
+                }
+                else if (serverEvent.fServerEventType == ServerEventEnum.Exiting)
+                {
+                    fClientNames.Remove(serverEvent.fClientIndex);
+                    fTextLog.AddLog(String.Format("Player exiting index {0} name {1}", serverEvent.fClientIndex, serverEvent.fValue));
                 }
             }
         }
