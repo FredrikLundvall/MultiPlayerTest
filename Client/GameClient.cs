@@ -45,7 +45,7 @@ namespace BlowtorchesAndGunpowder
                         if (remoteEndPoint.ToString() == fServerEndPoint.ToString())
                         {
                             var datagram = Encoding.ASCII.GetString(receivedResults);
-                            fTextLog.AddLog(String.Format("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram));
+                            //fTextLog.AddLog(String.Format("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram));
                             InterpretIncommingMessage(remoteEndPoint, datagram);
                         }
                     }
@@ -109,7 +109,7 @@ namespace BlowtorchesAndGunpowder
         {
             byte[] datagram = Encoding.ASCII.GetBytes(aMessage);
             fUdpSender.Send(datagram, datagram.Length, fServerEndPoint);
-            fTextLog.AddLog(String.Format("Sending data to {0} - {1}", fServerEndPoint.ToString(), aMessage));
+            //fTextLog.AddLog(String.Format("Sending data to {0} - {1}", fServerEndPoint.ToString(), aMessage));
         }
         public GameState GetGameState()
         {
