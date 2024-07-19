@@ -5,13 +5,19 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Drawing;
+using System.Diagnostics;
 
 namespace BlowtorchesAndGunpowder
 {
     internal class GameServer
     {
+        public const int GAME_STATE_UPDATE_ELAPSE_TIME = 32;
+        public const int UDP_RECEIVE_TIMEOUT = 5000;
         const int UDP_SERVER_PORT = 11000;
         const int UDP_CLIENT_PORT = 11001;
+        private Stopwatch fStopWatch = new Stopwatch();
+        private TimeSpan fTotalTimeElapsed;
+        private TimeSpan fTotalTimeElapsedWhenLastStateUpdate;
         private bool fStarted = false;
         private int fMaxClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
         private IPEndPoint fLocalEndPoint = new IPEndPoint(IPAddress.Loopback, UDP_SERVER_PORT);
@@ -21,12 +27,16 @@ namespace BlowtorchesAndGunpowder
         public void Start()
         {
             fStarted = true;
+            fStopWatch.Start();
+            fTotalTimeElapsed = fStopWatch.Elapsed;
+            fTotalTimeElapsedWhenLastStateUpdate = fTotalTimeElapsed;
             using (var udpClient = new UdpClient())
             {
                 var remoteEndPoint = new IPEndPoint(IPAddress.Any, UDP_SERVER_PORT);
                 udpClient.ExclusiveAddressUse = false;
                 udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 udpClient.Client.Bind(fLocalEndPoint);
+                udpClient.Client.ReceiveTimeout = UDP_RECEIVE_TIMEOUT;
                 LogToConsole("Listening for udp {0}", remoteEndPoint.ToString());
                 while (fStarted)
                 {
@@ -34,9 +44,13 @@ namespace BlowtorchesAndGunpowder
                     {
                         //IPEndPoint object will allow us to read datagrams sent from any source.
                         var receivedResults = udpClient.Receive(ref remoteEndPoint);
+                        TimeSpan timeElapsedNow = fStopWatch.Elapsed;
+                        TimeSpan timeElapsedFromLast = timeElapsedNow - fTotalTimeElapsed;
+                        fTotalTimeElapsed = timeElapsedNow;
+
                         var datagram = Encoding.ASCII.GetString(receivedResults);
                         LogToConsole("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram);
-                        InterpretIncommingMessage(remoteEndPoint, datagram);
+                        InterpretIncommingMessage(timeElapsedFromLast, remoteEndPoint, datagram);
                     }
                     catch (SocketException e)
                     {
@@ -53,7 +67,7 @@ namespace BlowtorchesAndGunpowder
             }
         }
 
-        private void InterpretIncommingMessage(IPEndPoint aRemoteEndPoint, string aDatagram)
+        private void InterpretIncommingMessage(TimeSpan aTimeElapsed, IPEndPoint aRemoteEndPoint, string aDatagram)
         {
             if (aDatagram.EndsWith("\"fMessageClass\":\"ClientEvent\"}"))
             {
@@ -71,7 +85,7 @@ namespace BlowtorchesAndGunpowder
                         var serverAcceptingEvent = new ServerEvent(clientIndex, ServerEventEnum.Accepting, clientEvent.fValue);
                         SendMessage(clientIpEndPoint, serverAcceptingEvent.GetAsJson());
                         if (!fGameState.fPlayerShip.ContainsKey(clientIndex))
-                            fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 0));
+                            fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 0, 0, 0));
 
                         var serverEnteringEvent = new ServerEvent(clientIndex, ServerEventEnum.Entering, clientEvent.fValue);
                         SendMessageToAllClients(serverEnteringEvent.GetAsJson());
@@ -98,13 +112,32 @@ namespace BlowtorchesAndGunpowder
             else if (aDatagram.EndsWith("\"fMessageClass\":\"ClientAction\"}"))
             {
                 var clientAction = ClientAction.CreateFromJson(aDatagram);
+                int clientIndex = clientAction.fClientIndex;
+                var playerShip = fGameState.fPlayerShip[clientIndex];
+                if (clientAction.fRotationType == RotationEnum.Left)
+                {
+                    playerShip.RotateLeft(aTimeElapsed);
+                }
+                else if (clientAction.fRotationType == RotationEnum.Right)
+                {
+                    playerShip.RotateRight(aTimeElapsed);
+                }
+                if (clientAction.fIsThrusting)
+                {
+                    playerShip.EngageForwardThrustors(aTimeElapsed);
+                }
                 if (clientAction.fIsShooting)
                 {
                     if(!fGameState.fPlayerShoot.ContainsKey(0))
                         fGameState.fPlayerShoot.Add(0, true);
-                    SendMessageToAllClients(fGameState.GetAsJson());
                 }
+                SendUpdateState();
             }
+        }
+        public void SendUpdateState()
+        {
+            fTotalTimeElapsedWhenLastStateUpdate = fTotalTimeElapsed;
+            SendMessageToAllClients(fGameState.GetAsJson());
         }
 
         public void Stop()

@@ -10,8 +10,10 @@ namespace BlowtorchesAndGunpowder
         public void AddLog(String aLog)
         {
             fLog.Add(DateTime.Now.ToString("HH:mm:ss") + " " + aLog);
-            if(fLog.Count > 15)
-            fLog.RemoveRange(0, fLog.Count -15);
+            if (fLog.Count > 15)
+            {
+                fLog.RemoveRange(0, fLog.Count - 15);
+            }
         }
         public String[] GetLog()
         {
