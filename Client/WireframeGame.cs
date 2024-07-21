@@ -1,24 +1,24 @@
 ﻿using System;
-using System.Drawing;
-using System.Diagnostics;
-using System.Windows.Forms;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace BlowtorchesAndGunpowder
 {
     public partial class WireframeGame : Form
     {
         public const int SCREEN_UPDATE_ELAPSE_TIME = 16;
-        public const int MESSAGE_UPDATE_ELAPSE_TIME = 32;
+        public const int MESSAGE_UPDATE_ELAPSE_TIME = 42;
         private Font fOutputFont = new Font("Arial", 8);
         private BufferedGraphicsContext fContext;
         private BufferedGraphics fGrafx;
         private Stopwatch fStopWatch = new Stopwatch();
-        private TimeSpan fTotalTimeElapsed;
-        private TimeSpan fTotalTimeElapsedWhenUpdateScreen;
-        private TimeSpan fTotalTimeElapsedWhenLastShot;
-        private TimeSpan fTotalTimeElapsedWhenLastMessage;
+        private TimeSpan fLastCheckTime;
+        private TimeSpan fLastUpdateScreenTime;
+        private TimeSpan fLastShotTime;
+        private TimeSpan fLastMessageTime;
         private bool fPause = false;
 
         Pen fHeroShotPen = new Pen(Color.YellowGreen);
@@ -72,10 +72,10 @@ namespace BlowtorchesAndGunpowder
                 fGameClient.SendMessage(new ClientEvent(fGameClient.GetClientIndex(), ClientEventEnum.Joining, fSettings.fUserName).GetAsJson());
             }
             fStopWatch.Start();
-            fTotalTimeElapsed = fStopWatch.Elapsed;
-            fTotalTimeElapsedWhenUpdateScreen = fTotalTimeElapsed;
-            fTotalTimeElapsedWhenLastShot = fTotalTimeElapsed;
-            fTotalTimeElapsedWhenLastMessage = fTotalTimeElapsed;
+            fLastCheckTime = fStopWatch.Elapsed;
+            fLastUpdateScreenTime = fLastCheckTime;
+            fLastShotTime = fLastCheckTime;
+            fLastMessageTime = fLastCheckTime;
         }
         private void  OnApplicationIdle(object sender, EventArgs e)
         {
@@ -101,23 +101,23 @@ namespace BlowtorchesAndGunpowder
             {
                 // LOOP
                 TimeSpan timeElapsedNow = fStopWatch.Elapsed;
-                TimeSpan timeElapsedFromLast = timeElapsedNow - fTotalTimeElapsed;
-                fTotalTimeElapsed = timeElapsedNow;
+                TimeSpan timeElapsedFromLast = timeElapsedNow - fLastCheckTime;
+                fLastCheckTime = timeElapsedNow;
 
                 ProcessKeyState(timeElapsedFromLast);
                 DoChange(timeElapsedFromLast);
                 //CheckBounds(new RectangleF(0, 0, this.ClientSize.Width - size, this.ClientSize.Height - size));
 
-                TimeSpan timeElapsedFromLastUpdateScreen = timeElapsedNow - fTotalTimeElapsedWhenUpdateScreen;
+                TimeSpan timeElapsedFromLastUpdateScreen = timeElapsedNow - fLastUpdateScreenTime;
                 if (timeElapsedFromLastUpdateScreen.Milliseconds > SCREEN_UPDATE_ELAPSE_TIME)
                 {
-                    fTotalTimeElapsedWhenUpdateScreen = timeElapsedNow;
+                    fLastUpdateScreenTime = timeElapsedNow;
                     UpdateScreen();
                 }
 
-                if (fRotation != RotationEnum.None || fForwardThrustor || fShooting && (timeElapsedNow - fTotalTimeElapsedWhenLastMessage).Milliseconds > MESSAGE_UPDATE_ELAPSE_TIME)
+                if (/*fRotation != RotationEnum.None || fForwardThrustor || fShooting &&*/ (timeElapsedNow - fLastMessageTime).Milliseconds > MESSAGE_UPDATE_ELAPSE_TIME)
                 {
-                    fTotalTimeElapsedWhenLastMessage = timeElapsedNow;
+                    fLastMessageTime = timeElapsedNow;
                     //Send the messages to server
                     fGameClient.SendMessage(new ClientAction(fGameClient.GetClientIndex(), fRotation, fForwardThrustor, fShooting).GetAsJson());
                 }
@@ -169,10 +169,10 @@ namespace BlowtorchesAndGunpowder
             {
                 fForwardThrustor = false;
             }
-            if (User32Import.GetKeyState(Keys.Space) && (fTotalTimeElapsed - fTotalTimeElapsedWhenLastShot).Milliseconds > fHeroShip.GetBulletDelay())
+            if (User32Import.GetKeyState(Keys.Space) && (fLastCheckTime - fLastShotTime).Milliseconds > fHeroShip.GetBulletDelay())
             {
-                fHeroShotList.Add(new Shot(fTotalTimeElapsed, fHeroShip.GetPosition(), fHeroShip.GetDirection(), fHeroShip.GetSpeedVector()));
-                fTotalTimeElapsedWhenLastShot = fTotalTimeElapsed;
+                fHeroShotList.Add(new Shot(fLastCheckTime, fHeroShip.GetPosition(), fHeroShip.GetDirection(), fHeroShip.GetSpeedVector()));
+                fLastShotTime = fLastCheckTime;
                 fShooting = true;
             }
             else
@@ -186,7 +186,7 @@ namespace BlowtorchesAndGunpowder
             int i = 0;
             while (i < fHeroShotList.Count)
             {
-                if (fHeroShotList[i].IsTimeToRemove(fTotalTimeElapsed))
+                if (fHeroShotList[i].IsTimeToRemove(fLastCheckTime))
                     fHeroShotList.RemoveAt(i);
                 else
                 {

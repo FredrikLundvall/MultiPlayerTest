@@ -6,18 +6,20 @@ using System.Net.Sockets;
 using System.Text;
 using System.Drawing;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace BlowtorchesAndGunpowder
 {
     internal class GameServer
     {
-        public const int GAME_STATE_UPDATE_ELAPSE_TIME = 32;
+        public const int GAME_STATE_UPDATE_ELAPSE_TIME = 42;
         public const int UDP_RECEIVE_TIMEOUT = 5000;
         const int UDP_SERVER_PORT = 11000;
         const int UDP_CLIENT_PORT = 11001;
+        private RectangleF fGameBounds = new RectangleF(0,0,1920,1080);
         private Stopwatch fStopWatch = new Stopwatch();
-        private TimeSpan fTotalTimeElapsed;
-        private TimeSpan fTotalTimeElapsedWhenLastStateUpdate;
+        private TimeSpan fLastCheckTime;
+        private TimeSpan fLastStateUpdateTime;
         private bool fStarted = false;
         private int fMaxClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
         private IPEndPoint fLocalEndPoint = new IPEndPoint(IPAddress.Loopback, UDP_SERVER_PORT);
@@ -26,10 +28,39 @@ namespace BlowtorchesAndGunpowder
 
         public void Start()
         {
-            fStarted = true;
+            fStarted = true; 
             fStopWatch.Start();
-            fTotalTimeElapsed = fStopWatch.Elapsed;
-            fTotalTimeElapsedWhenLastStateUpdate = fTotalTimeElapsed;
+            fLastCheckTime = fStopWatch.Elapsed;
+            fLastStateUpdateTime = fLastCheckTime;
+            //Asynchronicly run the listening loop
+            Task.Run(() => ListeningLoop());
+            LogToConsole("Game loop", "");
+            while (fStarted)
+            {
+                try
+                {
+                    TimeSpan currentTime = fStopWatch.Elapsed;
+                    UpdateAllClientsState(currentTime - fLastCheckTime);
+                    fLastCheckTime = currentTime;
+                    if ((currentTime - fLastStateUpdateTime).Milliseconds > GAME_STATE_UPDATE_ELAPSE_TIME)
+                    {
+                        fLastStateUpdateTime = currentTime;
+                        SendMessageToAllClients(fGameState.GetAsJson());
+                    }
+                    else
+                    {
+                        System.Threading.Thread.Sleep(2);
+                    }
+                }
+                catch (Exception e)
+                {
+                    LogToConsole("Exception in game loop {0}", e.Message);
+                }
+            }
+
+        }
+        private void ListeningLoop()
+        {
             using (var udpClient = new UdpClient())
             {
                 var remoteEndPoint = new IPEndPoint(IPAddress.Any, UDP_SERVER_PORT);
@@ -44,13 +75,10 @@ namespace BlowtorchesAndGunpowder
                     {
                         //IPEndPoint object will allow us to read datagrams sent from any source.
                         var receivedResults = udpClient.Receive(ref remoteEndPoint);
-                        TimeSpan timeElapsedNow = fStopWatch.Elapsed;
-                        TimeSpan timeElapsedFromLast = timeElapsedNow - fTotalTimeElapsed;
-                        fTotalTimeElapsed = timeElapsedNow;
 
                         var datagram = Encoding.ASCII.GetString(receivedResults);
-                        LogToConsole("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram);
-                        InterpretIncommingMessage(timeElapsedFromLast, remoteEndPoint, datagram);
+                        //LogToConsole("Receiving udp from {0} - {1}", remoteEndPoint.ToString(), datagram);
+                        InterpretIncommingMessage(remoteEndPoint, datagram);
                     }
                     catch (SocketException e)
                     {
@@ -67,7 +95,7 @@ namespace BlowtorchesAndGunpowder
             }
         }
 
-        private void InterpretIncommingMessage(TimeSpan aTimeElapsed, IPEndPoint aRemoteEndPoint, string aDatagram)
+        private void InterpretIncommingMessage(IPEndPoint aRemoteEndPoint, string aDatagram)
         {
             if (aDatagram.EndsWith("\"fMessageClass\":\"ClientEvent\"}"))
             {
@@ -85,7 +113,7 @@ namespace BlowtorchesAndGunpowder
                         var serverAcceptingEvent = new ServerEvent(clientIndex, ServerEventEnum.Accepting, clientEvent.fValue);
                         SendMessage(clientIpEndPoint, serverAcceptingEvent.GetAsJson());
                         if (!fGameState.fPlayerShip.ContainsKey(clientIndex))
-                            fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 0, 0, 0));
+                            fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 1.570796326794896619f, 0, 0));
 
                         var serverEnteringEvent = new ServerEvent(clientIndex, ServerEventEnum.Entering, clientEvent.fValue);
                         SendMessageToAllClients(serverEnteringEvent.GetAsJson());
@@ -113,33 +141,43 @@ namespace BlowtorchesAndGunpowder
             {
                 var clientAction = ClientAction.CreateFromJson(aDatagram);
                 int clientIndex = clientAction.fClientIndex;
-                var playerShip = fGameState.fPlayerShip[clientIndex];
-                if (clientAction.fRotationType == RotationEnum.Left)
+                if (!fClientList.ContainsKey(clientIndex))
+                    return;
+                var client = fClientList[clientIndex];
+                if (client != null)
                 {
-                    playerShip.RotateLeft(aTimeElapsed);
+                    client.fCurrentAction = clientAction;
                 }
-                else if (clientAction.fRotationType == RotationEnum.Right)
-                {
-                    playerShip.RotateRight(aTimeElapsed);
-                }
-                if (clientAction.fIsThrusting)
-                {
-                    playerShip.EngageForwardThrustors(aTimeElapsed);
-                }
-                if (clientAction.fIsShooting)
-                {
-                    if(!fGameState.fPlayerShoot.ContainsKey(0))
-                        fGameState.fPlayerShoot.Add(0, true);
-                }
-                SendUpdateState();
             }
         }
-        public void SendUpdateState()
-        {
-            fTotalTimeElapsedWhenLastStateUpdate = fTotalTimeElapsed;
-            SendMessageToAllClients(fGameState.GetAsJson());
-        }
 
+        private void UpdateAllClientsState(TimeSpan aTimeElapsedFromLast)
+        {
+            foreach (var client in fClientList.Values)
+            {
+                if (!fGameState.fPlayerShip.ContainsKey(client.fIndex))
+                    continue;
+                var playerShip = fGameState.fPlayerShip[client.fIndex];
+                if (client.fCurrentAction.fRotationType == RotationEnum.Left)
+                {
+                    playerShip.RotateLeft(aTimeElapsedFromLast);
+                }
+                else if (client.fCurrentAction.fRotationType == RotationEnum.Right)
+                {
+                    playerShip.RotateRight(aTimeElapsedFromLast);
+                }
+                if (client.fCurrentAction.fIsThrusting)
+                {
+                    playerShip.EngageForwardThrustors(aTimeElapsedFromLast);
+                }
+                if (client.fCurrentAction.fIsShooting)
+                {
+                    if (!fGameState.fPlayerShoot.ContainsKey(0))
+                        fGameState.fPlayerShoot.Add(0, true);
+                }
+                playerShip.CalcNewPosition(aTimeElapsedFromLast, fGameBounds);
+            }
+        }
         public void Stop()
         {
             fStarted = false;
@@ -154,7 +192,7 @@ namespace BlowtorchesAndGunpowder
             foreach(var client in fClientList.Values)
             {
                 udpSender.Send(datagram, datagram.Length, client.fEndPoint);
-                LogToConsole("Sending data to {0} - {1}", client.fEndPoint.ToString(), aMessage);
+                //LogToConsole("Sending data to {0} - {1}", client.fEndPoint.ToString(), aMessage);
             }
         }
         public void SendMessage(IPEndPoint aIpEndPoint, String aMessage)

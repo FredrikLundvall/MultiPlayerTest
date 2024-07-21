@@ -6,6 +6,7 @@ namespace BlowtorchesAndGunpowder
 {
     public class ClientAction : MessageBase
     {
+        public static ClientAction NullObject = new ClientAction(MessageBase.NOT_JOINED_CLIENT_INDEX, RotationEnum.None, false, false);
         public int fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
         public RotationEnum fRotationType = RotationEnum.None;
         public bool fIsThrusting;

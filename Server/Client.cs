@@ -12,8 +12,9 @@ namespace BlowtorchesAndGunpowder
         public int fIndex;
         public IPEndPoint fEndPoint;
         public string fName;
+        public ClientAction fCurrentAction = ClientAction.NullObject;
 
-        public Client(int aIndex, IPEndPoint aEndPoint,  string aName)
+        public Client(int aIndex, IPEndPoint aEndPoint, string aName)
         {
             this.fIndex = aIndex;
             this.fEndPoint = aEndPoint;
