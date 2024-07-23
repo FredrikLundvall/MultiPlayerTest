@@ -68,10 +68,6 @@ namespace BlowtorchesAndGunpowder
             if (aDatagram.EndsWith("\"fMessageClass\":\"GameState\"}"))
             {
                 fGameState = GameState.CreateFromJson(aDatagram);
-                if (fGameState.fPlayerShoot.ContainsKey(MessageBase.NOT_JOINED_CLIENT_INDEX) && fGameState.fPlayerShoot[fClientIndex])
-                {
-                    fTextLog.AddLog(String.Format("Shooting"));
-                }
             }
             else if (aDatagram.EndsWith("\"fMessageClass\":\"ServerEvent\"}"))
             {

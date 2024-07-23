@@ -8,14 +8,18 @@ namespace BlowtorchesAndGunpowder
 {
     public class GameObject
     {
+        public int fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
+        public float fSpawnAtSecond = 0;
         public float fPositionX = 0;
         public float fPositionY = 0;
         public float fDirection = 1.570796326794896619f;
         public float fSpeedVectorX = 0;
         public float fSpeedVectorY = 0;
 
-        public GameObject(float aPositionX, float aPositionY, float aDirection, float aSpeedvectorX, float aSpeedvectorY)
+        public GameObject(int aClientIndex, float aSpawnAtSecond, float aPositionX, float aPositionY, float aDirection, float aSpeedvectorX, float aSpeedvectorY)
         {
+            fClientIndex = aClientIndex;
+            fSpawnAtSecond = aSpawnAtSecond;
             fPositionX = aPositionX;
             fPositionY = aPositionY;
             fDirection = aDirection;
@@ -24,16 +28,16 @@ namespace BlowtorchesAndGunpowder
         }
         public void RotateLeft(TimeSpan aTimeElapsed)
         {
-            fDirection += (float)(MovementUtil.ROTATION_FORCE * aTimeElapsed.TotalSeconds);
+            fDirection += (float)(MovementUtil.SHIP_ROTATION_FORCE * aTimeElapsed.TotalSeconds);
         }
         public void RotateRight(TimeSpan aTimeElapsed)
         {
-            fDirection -= (float)(MovementUtil.ROTATION_FORCE * aTimeElapsed.TotalSeconds);
+            fDirection -= (float)(MovementUtil.SHIP_ROTATION_FORCE * aTimeElapsed.TotalSeconds);
         }
-        public void EngageForwardThrustors(TimeSpan aTimeElapsed)
+        public void EngageForwardThrustors(TimeSpan aTimeElapsed, float aThrustorsForce)
         {
-            fSpeedVectorX += (float)(Math.Cos(fDirection) * MovementUtil.THRUSTORS_FORCE * aTimeElapsed.TotalSeconds);
-            fSpeedVectorY -= (float)(Math.Sin(fDirection) * MovementUtil.THRUSTORS_FORCE * aTimeElapsed.TotalSeconds);
+            fSpeedVectorX += (float)(Math.Cos(fDirection) * aThrustorsForce * aTimeElapsed.TotalSeconds);
+            fSpeedVectorY -= (float)(Math.Sin(fDirection) * aThrustorsForce * aTimeElapsed.TotalSeconds);
         }
         public void CalcNewPosition(TimeSpan aTimeElapsed, RectangleF aBounds)
         {

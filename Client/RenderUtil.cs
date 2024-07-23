@@ -8,6 +8,7 @@ namespace BlowtorchesAndGunpowder
     public class RenderUtil
     {
         static public readonly PointF[] ShipLocalPoints = new PointF[4] { new Point(-4, 5), new Point(4, 5), new Point(0, -5), new Point(-4, 5) };
+        static public readonly PointF[] ShotLocalPoints = new PointF[2] { new Point(0, -5), new Point(0, -8) };
 
         static public PointF[] GetWorldPoints(PointF[] aLocalPoints, float aPositionX, float aPositionY, float aDirection)
         {

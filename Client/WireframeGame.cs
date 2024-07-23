@@ -17,14 +17,11 @@ namespace BlowtorchesAndGunpowder
         private Stopwatch fStopWatch = new Stopwatch();
         private TimeSpan fLastCheckTime;
         private TimeSpan fLastUpdateScreenTime;
-        private TimeSpan fLastShotTime;
         private TimeSpan fLastMessageTime;
         private bool fPause = false;
 
         Pen fHeroShotPen = new Pen(Color.YellowGreen);
         Pen fHeroShipPen = new Pen(Color.Cornsilk);
-        Ship fHeroShip = new Ship();
-        List<Shot> fHeroShotList = new List<Shot>();
         static Settings fSettings = new Settings("Player", GameClient.SERVER_IP, GameClient.UDP_SERVER_PORT, GameClient.UDP_CLIENT_PORT);
         GameClient fGameClient = new GameClient(fSettings);
         Task fRunningTask = null;
@@ -74,7 +71,6 @@ namespace BlowtorchesAndGunpowder
             fStopWatch.Start();
             fLastCheckTime = fStopWatch.Elapsed;
             fLastUpdateScreenTime = fLastCheckTime;
-            fLastShotTime = fLastCheckTime;
             fLastMessageTime = fLastCheckTime;
         }
         private void  OnApplicationIdle(object sender, EventArgs e)
@@ -104,9 +100,7 @@ namespace BlowtorchesAndGunpowder
                 TimeSpan timeElapsedFromLast = timeElapsedNow - fLastCheckTime;
                 fLastCheckTime = timeElapsedNow;
 
-                ProcessKeyState(timeElapsedFromLast);
-                DoChange(timeElapsedFromLast);
-                //CheckBounds(new RectangleF(0, 0, this.ClientSize.Width - size, this.ClientSize.Height - size));
+                ProcessKeyState();
 
                 TimeSpan timeElapsedFromLastUpdateScreen = timeElapsedNow - fLastUpdateScreenTime;
                 if (timeElapsedFromLastUpdateScreen.Milliseconds > SCREEN_UPDATE_ELAPSE_TIME)
@@ -115,7 +109,7 @@ namespace BlowtorchesAndGunpowder
                     UpdateScreen();
                 }
 
-                if (/*fRotation != RotationEnum.None || fForwardThrustor || fShooting &&*/ (timeElapsedNow - fLastMessageTime).Milliseconds > MESSAGE_UPDATE_ELAPSE_TIME)
+                if ((timeElapsedNow - fLastMessageTime).Milliseconds > MESSAGE_UPDATE_ELAPSE_TIME)
                 {
                     fLastMessageTime = timeElapsedNow;
                     //Send the messages to server
@@ -144,16 +138,14 @@ namespace BlowtorchesAndGunpowder
             }
             return settingsResult;
         }
-        private void ProcessKeyState(TimeSpan aTimeElapsed)
+        private void ProcessKeyState()
         {
             if (User32Import.GetKeyState(Keys.Left))
             {
-                fHeroShip.RotateLeft(aTimeElapsed);
                 fRotation = RotationEnum.Left;
             }
             else if (User32Import.GetKeyState(Keys.Right))
             {
-                fHeroShip.RotateRight(aTimeElapsed);
                 fRotation = RotationEnum.Right;
             }
             else
@@ -162,37 +154,19 @@ namespace BlowtorchesAndGunpowder
             }
             if (User32Import.GetKeyState(Keys.Up))
             {
-                fHeroShip.EngageForwardThrustors(aTimeElapsed);
                 fForwardThrustor = true;
             }
             else
             {
                 fForwardThrustor = false;
             }
-            if (User32Import.GetKeyState(Keys.Space) && (fLastCheckTime - fLastShotTime).Milliseconds > fHeroShip.GetBulletDelay())
+            if (User32Import.GetKeyState(Keys.Space))
             {
-                fHeroShotList.Add(new Shot(fLastCheckTime, fHeroShip.GetPosition(), fHeroShip.GetDirection(), fHeroShip.GetSpeedVector()));
-                fLastShotTime = fLastCheckTime;
                 fShooting = true;
             }
             else
             {
                 fShooting = false;
-            }
-        }
-        private void DoChange(TimeSpan aTimeElapsed)
-        {
-            fHeroShip.CalcNewPosition(aTimeElapsed, this.ClientRectangle);
-            int i = 0;
-            while (i < fHeroShotList.Count)
-            {
-                if (fHeroShotList[i].IsTimeToRemove(fLastCheckTime))
-                    fHeroShotList.RemoveAt(i);
-                else
-                {
-                    fHeroShotList[i].CalcNewPosition(aTimeElapsed, this.ClientRectangle);
-                    i++;
-                }
             }
         }
         private void UpdateScreen()
@@ -220,26 +194,20 @@ namespace BlowtorchesAndGunpowder
             g.Clear(Color.Black);
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             // Draw information strings.
-            //g.DrawString("Click enter to toggle timed display refresh " + timer1.Enabled.ToString() , OutputFont, Brushes.White, 10, 10);
-            g.DrawString(string.Format("Direction: {0:F2} radians", fHeroShip.GetDirection()), fOutputFont, Brushes.White, 10, 34);
             String[] allRows = fGameClient.GetLog();
-            g.DrawString(String.Join(Environment.NewLine, allRows) + Environment.NewLine, fOutputFont, Brushes.LightBlue, new RectangleF(10, 50, 1900, 200));
-            //Draw local graphics
-            g.DrawLines(fHeroShipPen, fHeroShip.GetWorldPoints());
-            for (int i = 0; i < fHeroShotList.Count; i++)
-                g.DrawLines(fHeroShotPen, fHeroShotList[i].GetWorldPoints());
+            g.DrawString(String.Join(Environment.NewLine, allRows) + Environment.NewLine, fOutputFont, Brushes.LightBlue, new RectangleF(10, 30, 1900, 200));
             //Draw server graphics
             var gameState = fGameClient.GetGameState();
-            foreach(var playerShip in gameState.fPlayerShip)
+            foreach(var playerShip in gameState.fPlayerShipList)
             {
                 var translatedPoints = RenderUtil.GetWorldPoints(
                         RenderUtil.ShipLocalPoints,
-                        playerShip.Value.fPositionX,
-                        playerShip.Value.fPositionY,
-                        playerShip.Value.fDirection
+                        playerShip.fPositionX,
+                        playerShip.fPositionY,
+                        playerShip.fDirection
                         );
 
-                if (playerShip.Key == fGameClient.GetClientIndex())
+                if (playerShip.fClientIndex == fGameClient.GetClientIndex())
                 {
                     g.FillPolygon(Brushes.DarkSlateGray, translatedPoints);
                     g.DrawLines(fHeroShipPen, translatedPoints);
@@ -248,6 +216,24 @@ namespace BlowtorchesAndGunpowder
                 {
                     g.FillPolygon(Brushes.DarkRed, translatedPoints);
                     g.DrawLines(fHeroShipPen, translatedPoints);
+                }
+            }
+            foreach (var playerShot in gameState.fPlayerShotList)
+            {
+                var translatedPoints = RenderUtil.GetWorldPoints(
+                        RenderUtil.ShotLocalPoints,
+                        playerShot.fPositionX,
+                        playerShot.fPositionY,
+                        playerShot.fDirection
+                        );
+
+                if (playerShot.fClientIndex == fGameClient.GetClientIndex())
+                {
+                    g.DrawLines(fHeroShotPen, translatedPoints);
+                }
+                else
+                {
+                    g.DrawLines(fHeroShotPen, translatedPoints);
                 }
             }
         }

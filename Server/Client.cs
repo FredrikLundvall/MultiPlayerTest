@@ -13,6 +13,7 @@ namespace BlowtorchesAndGunpowder
         public IPEndPoint fEndPoint;
         public string fName;
         public ClientAction fCurrentAction = ClientAction.NullObject;
+        public float fLastShotSecond = 0;
 
         public Client(int aIndex, IPEndPoint aEndPoint, string aName)
         {

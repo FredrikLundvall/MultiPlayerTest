@@ -25,6 +25,7 @@ namespace BlowtorchesAndGunpowder
         private IPEndPoint fLocalEndPoint = new IPEndPoint(IPAddress.Loopback, UDP_SERVER_PORT);
         private Dictionary<int, Client> fClientList = new Dictionary<int, Client>();
         private GameState fGameState = new GameState();
+        private List<GameObject> fGameObjectRemoveList = new List<GameObject>();
 
         public void Start()
         {
@@ -112,8 +113,8 @@ namespace BlowtorchesAndGunpowder
                         LogToConsole("Adding new client {0} as index {1} with username {2}", aRemoteEndPoint.Address.ToString(), clientIndex, clientEvent.fValue);
                         var serverAcceptingEvent = new ServerEvent(clientIndex, ServerEventEnum.Accepting, clientEvent.fValue);
                         SendMessage(clientIpEndPoint, serverAcceptingEvent.GetAsJson());
-                        if (!fGameState.fPlayerShip.ContainsKey(clientIndex))
-                            fGameState.fPlayerShip.Add(clientIndex, new GameObject(320, 320, 1.570796326794896619f, 0, 0));
+                        if (!fGameState.fPlayerShipList.Any(p => p.fClientIndex == clientIndex))
+                            fGameState.fPlayerShipList.Add(new GameObject(clientIndex, (float) fStopWatch.Elapsed.TotalSeconds, 320, 320, 1.570796326794896619f, 0, 0));
 
                         var serverEnteringEvent = new ServerEvent(clientIndex, ServerEventEnum.Entering, clientEvent.fValue);
                         SendMessageToAllClients(serverEnteringEvent.GetAsJson());
@@ -129,8 +130,9 @@ namespace BlowtorchesAndGunpowder
                         var serverEvent = new ServerEvent(clientIndex, ServerEventEnum.Rejecting, clientEvent.fValue);
                         SendMessage(client.fEndPoint, serverEvent.GetAsJson());
                         fClientList.Remove(clientIndex);
-                        if (fGameState.fPlayerShip.ContainsKey(clientIndex))
-                            fGameState.fPlayerShip.Remove(clientIndex);
+                        var playerShip = fGameState.fPlayerShipList.FirstOrDefault(p => p.fClientIndex == clientIndex);
+                        if (playerShip != null)
+                            fGameState.fPlayerShipList.Remove(playerShip);
 
                         var serverExitingEvent = new ServerEvent(clientIndex, ServerEventEnum.Exiting, clientEvent.fValue);
                         SendMessageToAllClients(serverExitingEvent.GetAsJson());
@@ -153,11 +155,11 @@ namespace BlowtorchesAndGunpowder
 
         private void UpdateAllClientsState(TimeSpan aTimeElapsedFromLast)
         {
-            foreach (var client in fClientList.Values)
+            foreach (var playerShip in fGameState.fPlayerShipList)
             {
-                if (!fGameState.fPlayerShip.ContainsKey(client.fIndex))
+                if (!fClientList.ContainsKey(playerShip.fClientIndex))
                     continue;
-                var playerShip = fGameState.fPlayerShip[client.fIndex];
+                var client = fClientList[playerShip.fClientIndex];
                 if (client.fCurrentAction.fRotationType == RotationEnum.Left)
                 {
                     playerShip.RotateLeft(aTimeElapsedFromLast);
@@ -168,15 +170,36 @@ namespace BlowtorchesAndGunpowder
                 }
                 if (client.fCurrentAction.fIsThrusting)
                 {
-                    playerShip.EngageForwardThrustors(aTimeElapsedFromLast);
+                    playerShip.EngageForwardThrustors(aTimeElapsedFromLast, MovementUtil.SHIP_THRUSTORS_FORCE);
                 }
                 if (client.fCurrentAction.fIsShooting)
                 {
-                    if (!fGameState.fPlayerShoot.ContainsKey(0))
-                        fGameState.fPlayerShoot.Add(0, true);
+                    if ((float)fStopWatch.Elapsed.TotalSeconds - client.fLastShotSecond > MovementUtil.SHIP_BULLET_DELAY)
+                    {
+                        client.fLastShotSecond = (float)fStopWatch.Elapsed.TotalSeconds;
+                        var playerShot = new GameObject(client.fIndex, (float)fStopWatch.Elapsed.TotalSeconds, playerShip.fPositionX, playerShip.fPositionY, playerShip.fDirection, playerShip.fSpeedVectorX, playerShip.fSpeedVectorY);
+                        fGameState.fPlayerShotList.Add(playerShot);
+                        playerShot.EngageForwardThrustors(new TimeSpan(0, 0, 0, 0, 20), MovementUtil.SHOT_THRUSTORS_FORCE);
+                    }
                 }
                 playerShip.CalcNewPosition(aTimeElapsedFromLast, fGameBounds);
             }
+            foreach(var playerShot in fGameState.fPlayerShotList)
+            {
+                if (fStopWatch.Elapsed.TotalSeconds - playerShot.fSpawnAtSecond > MovementUtil.SHOT_ALIVE_SECONDS)
+                {
+                    fGameObjectRemoveList.Add(playerShot);
+                }
+                else
+                {
+                    playerShot.CalcNewPosition(aTimeElapsedFromLast, fGameBounds);
+                }
+            }
+            foreach (var playerShop in fGameObjectRemoveList)
+            {
+                fGameState.fPlayerShotList.Remove(playerShop);
+            }
+            fGameObjectRemoveList.Clear();
         }
         public void Stop()
         {
