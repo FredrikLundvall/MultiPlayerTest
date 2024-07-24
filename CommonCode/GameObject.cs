@@ -34,49 +34,57 @@ namespace BlowtorchesAndGunpowder
         {
             fDirection -= (float)(MovementUtil.SHIP_ROTATION_FORCE * aTimeElapsed.TotalSeconds);
         }
-        public void EngageForwardThrustors(TimeSpan aTimeElapsed, float aThrustorsForce)
+        public void EngageForwardThrustors(TimeSpan aTimeElapsed, float aThrustorsForce, float aSpeedLimit = float.MaxValue)
         {
-            fSpeedVectorX += (float)(Math.Cos(fDirection) * aThrustorsForce * aTimeElapsed.TotalSeconds);
-            fSpeedVectorY -= (float)(Math.Sin(fDirection) * aThrustorsForce * aTimeElapsed.TotalSeconds);
+            float speedVectorX = fSpeedVectorX + (float)(Math.Cos(fDirection) * aThrustorsForce * aTimeElapsed.TotalSeconds);
+            float speedVectorY = fSpeedVectorY - (float)(Math.Sin(fDirection) * aThrustorsForce * aTimeElapsed.TotalSeconds);
+            float speed = (float) Math.Sqrt(speedVectorX * speedVectorX + speedVectorY * speedVectorY);
+            if(speed > aSpeedLimit)
+            {
+                return;
+            }
+            fSpeedVectorX = speedVectorX;
+            fSpeedVectorY = speedVectorY;
         }
-        public void CalcNewPosition(TimeSpan aTimeElapsed, RectangleF aBounds)
+        public void CalcNewPosition(TimeSpan aTimeElapsed, RectangleF aBounds, bool aFlipWhenBounce = true)
         {
             fPositionY += (float)(fSpeedVectorY * aTimeElapsed.TotalSeconds);
             fPositionX += (float)(fSpeedVectorX * aTimeElapsed.TotalSeconds);
-            CheckBounds(aBounds);
+            CheckBounds(aBounds, aFlipWhenBounce);
         }
-        private void CheckBounds(RectangleF aBounds)
+        private void CheckBounds(RectangleF aBounds, bool aFlipWhenBounce)
         {
             if (fPositionX < aBounds.Left)
             {
-                BounceX(aBounds.Left - fPositionX);
+                BounceX(aBounds.Left - fPositionX, aFlipWhenBounce);
             }
             else if (fPositionX > aBounds.Right)
             {
-                BounceX(aBounds.Right - fPositionX);
+                BounceX(aBounds.Right - fPositionX, aFlipWhenBounce);
             }
 
             if (fPositionY < aBounds.Top)
             {
-                BounceY(aBounds.Top - fPositionY);
+                BounceY(aBounds.Top - fPositionY, aFlipWhenBounce);
             }
             else if (fPositionY > aBounds.Bottom)
             {
-                BounceY(aBounds.Bottom - fPositionY);
+                BounceY(aBounds.Bottom - fPositionY, aFlipWhenBounce);
             }
         }
-        private void BounceX(float aDeltaX)
+        private void BounceX(float aDeltaX, bool aFlipWhenBounce)
         {
             fPositionX += aDeltaX * 2;
             fSpeedVectorX = -fSpeedVectorX;
-            fDirection = FlipX(fDirection);
+            if(aFlipWhenBounce)
+                fDirection = FlipX(fDirection);
         }
-
-        private void BounceY(float aDeltaY)
+        private void BounceY(float aDeltaY, bool aFlipWhenBounce)
         {
             fPositionY += aDeltaY * 2;
             fSpeedVectorY = -fSpeedVectorY;
-            fDirection = FlipY(fDirection);
+            if (aFlipWhenBounce)
+                fDirection = FlipY(fDirection);
         }
         private float FlipX(float aAngle)
         {

@@ -20,8 +20,13 @@ namespace BlowtorchesAndGunpowder
         private TimeSpan fLastMessageTime;
         private bool fPause = false;
 
-        Pen fHeroShotPen = new Pen(Color.YellowGreen);
         Pen fHeroShipPen = new Pen(Color.Cornsilk);
+        Brush fHeroShipBrush = Brushes.DarkSlateGray;
+        Pen fHeroShotPen = new Pen(Color.YellowGreen);
+        Pen fOtherShipPen = new Pen(Color.LightYellow);
+        Brush fOtherShipBrush = Brushes.DarkRed;
+        Pen fotherShotPen = new Pen(Color.White);
+
         static Settings fSettings = new Settings("Player", GameClient.SERVER_IP, GameClient.UDP_SERVER_PORT, GameClient.UDP_CLIENT_PORT);
         GameClient fGameClient = new GameClient(fSettings);
         Task fRunningTask = null;
@@ -209,13 +214,13 @@ namespace BlowtorchesAndGunpowder
 
                 if (playerShip.fClientIndex == fGameClient.GetClientIndex())
                 {
-                    g.FillPolygon(Brushes.DarkSlateGray, translatedPoints);
+                    g.FillPolygon(fHeroShipBrush, translatedPoints);
                     g.DrawLines(fHeroShipPen, translatedPoints);
                 }
                 else
                 {
-                    g.FillPolygon(Brushes.DarkRed, translatedPoints);
-                    g.DrawLines(fHeroShipPen, translatedPoints);
+                    g.FillPolygon(fOtherShipBrush, translatedPoints);
+                    g.DrawLines(fOtherShipPen, translatedPoints);
                 }
             }
             foreach (var playerShot in gameState.fPlayerShotList)
@@ -233,7 +238,7 @@ namespace BlowtorchesAndGunpowder
                 }
                 else
                 {
-                    g.DrawLines(fHeroShotPen, translatedPoints);
+                    g.DrawLines(fotherShotPen, translatedPoints);
                 }
             }
         }

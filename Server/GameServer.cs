@@ -170,7 +170,7 @@ namespace BlowtorchesAndGunpowder
                 }
                 if (client.fCurrentAction.fIsThrusting)
                 {
-                    playerShip.EngageForwardThrustors(aTimeElapsedFromLast, MovementUtil.SHIP_THRUSTORS_FORCE);
+                    playerShip.EngageForwardThrustors(aTimeElapsedFromLast, MovementUtil.SHIP_THRUSTORS_FORCE, MovementUtil.SHIP_MAX_SPEED);
                 }
                 if (client.fCurrentAction.fIsShooting)
                 {
@@ -182,7 +182,7 @@ namespace BlowtorchesAndGunpowder
                         playerShot.EngageForwardThrustors(new TimeSpan(0, 0, 0, 0, 20), MovementUtil.SHOT_THRUSTORS_FORCE);
                     }
                 }
-                playerShip.CalcNewPosition(aTimeElapsedFromLast, fGameBounds);
+                playerShip.CalcNewPosition(aTimeElapsedFromLast, fGameBounds, false);
             }
             foreach(var playerShot in fGameState.fPlayerShotList)
             {
@@ -192,12 +192,12 @@ namespace BlowtorchesAndGunpowder
                 }
                 else
                 {
-                    playerShot.CalcNewPosition(aTimeElapsedFromLast, fGameBounds);
+                    playerShot.CalcNewPosition(aTimeElapsedFromLast, fGameBounds, true);
                 }
             }
-            foreach (var playerShop in fGameObjectRemoveList)
+            foreach (var playerShot in fGameObjectRemoveList)
             {
-                fGameState.fPlayerShotList.Remove(playerShop);
+                fGameState.fPlayerShotList.Remove(playerShot);
             }
             fGameObjectRemoveList.Clear();
         }

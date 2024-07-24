@@ -126,7 +126,7 @@ namespace BlowtorchesAndGunpowder
         }
         public void ChangeSetting(Settings aSettings)
         {
-            aSettings = fSettings;
+            fSettings = aSettings;
             fServerEndPoint = new IPEndPoint(IPAddress.Parse(fSettings.fServerIp), fSettings.fServerPort);
         }
     }
