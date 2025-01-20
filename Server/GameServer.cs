@@ -15,7 +15,7 @@ namespace BlowtorchesAndGunpowder
         public const int GAME_STATE_UPDATE_ELAPSE_TIME = 42;
         public const int UDP_RECEIVE_TIMEOUT = 5000;
         const int UDP_SERVER_PORT = 11000;
-        const int UDP_CLIENT_PORT = 11001;
+        //const int UDP_CLIENT_PORT = 11001;
         private RectangleF fGameBounds = new RectangleF(0,0,1920,1080);
         private Stopwatch fStopWatch = new Stopwatch();
         private TimeSpan fLastCheckTime;
@@ -108,7 +108,7 @@ namespace BlowtorchesAndGunpowder
                     {
                         fMaxClientIndex += 1;
                         clientIndex = fMaxClientIndex;
-                        var clientIpEndPoint = new IPEndPoint(aRemoteEndPoint.Address, UDP_CLIENT_PORT);
+                        var clientIpEndPoint = new IPEndPoint(aRemoteEndPoint.Address, clientEvent.fClientPort); //Get this from the client when it joins
                         fClientList.Add(clientIndex, new Client(clientIndex, clientIpEndPoint, clientEvent.fValue));
                         LogToConsole("Adding new client {0} as index {1} with username {2}", aRemoteEndPoint.Address.ToString(), clientIndex, clientEvent.fValue);
                         var serverAcceptingEvent = new ServerEvent(clientIndex, ServerEventEnum.Accepting, clientEvent.fValue);

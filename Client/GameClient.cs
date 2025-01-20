@@ -12,7 +12,7 @@ namespace BlowtorchesAndGunpowder
     {
         public const int UDP_RECEIVE_TIMEOUT = 5000;
         public const int UDP_SERVER_PORT = 11000;
-        public const string SERVER_IP = "127.0.0.1"; //192.168.3.17
+        public const string SERVER_IP = "127.0.0.1"; //192.168.3.17 127.0.0.1
         public const int UDP_CLIENT_PORT = 11001;
         UdpClient fUdpSender = new UdpClient();
         IPEndPoint fServerEndPoint = null;

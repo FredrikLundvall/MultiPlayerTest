@@ -9,12 +9,14 @@ namespace BlowtorchesAndGunpowder
         public int fClientIndex = MessageBase.NOT_JOINED_CLIENT_INDEX;
         public ClientEventEnum fClientEventType;
         public string fValue;
+        public int fClientPort;
 
-        public ClientEvent(int aClientIndex, ClientEventEnum aEventType, string aValue) : base("ClientEvent")
+        public ClientEvent(int aClientIndex, ClientEventEnum aEventType, string aValue, int aClientPort) : base("ClientEvent")
         {
             fClientIndex = aClientIndex;
             fClientEventType = aEventType;
             fValue = aValue;
+            fClientPort = aClientPort;
         }
         public static ClientEvent CreateFromJson(string aActionJson)
         {

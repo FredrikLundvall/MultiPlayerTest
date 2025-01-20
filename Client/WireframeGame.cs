@@ -68,11 +68,12 @@ namespace BlowtorchesAndGunpowder
             //DrawToBuffer(grafx.Graphics);
             //this.WindowState = FormWindowState.Maximized;
             DialogResult settingsResult = ShowPauseForm();
-            fRunningTask = Task.Run(() => fGameClient.Start());
             if (settingsResult != DialogResult.Abort)
             {
-                fGameClient.SendMessage(new ClientEvent(fGameClient.GetClientIndex(), ClientEventEnum.Joining, fSettings.fUserName).GetAsJson());
+                fGameClient.SendMessage(new ClientEvent(fGameClient.GetClientIndex(), ClientEventEnum.Joining, fSettings.fUserName, fSettings.fClientPort).GetAsJson());
+                fGameClient.ChangeSetting(fSettings);
             }
+            fRunningTask = Task.Run(() => fGameClient.Start());
             fStopWatch.Start();
             fLastCheckTime = fStopWatch.Elapsed;
             fLastUpdateScreenTime = fLastCheckTime;
@@ -87,12 +88,12 @@ namespace BlowtorchesAndGunpowder
                 DialogResult settingsResult = ShowPauseForm();
                 if (settingsResult == DialogResult.OK)
                 {
-                    fGameClient.SendMessage(new ClientEvent(fGameClient.GetClientIndex(), ClientEventEnum.Leaving, fSettings.fUserName).GetAsJson());
+                    fGameClient.SendMessage(new ClientEvent(fGameClient.GetClientIndex(), ClientEventEnum.Leaving, fSettings.fUserName, fSettings.fClientPort).GetAsJson());
                     fGameClient.Stop();
                     fRunningTask.Wait(GameClient.UDP_RECEIVE_TIMEOUT);
                     fGameClient.ChangeSetting(fSettings);
                     fRunningTask = Task.Run(() => fGameClient.Start());
-                    fGameClient.SendMessage(new ClientEvent(MessageBase.NOT_JOINED_CLIENT_INDEX, ClientEventEnum.Joining, fSettings.fUserName).GetAsJson());
+                    fGameClient.SendMessage(new ClientEvent(MessageBase.NOT_JOINED_CLIENT_INDEX, ClientEventEnum.Joining, fSettings.fUserName, fSettings.fClientPort).GetAsJson());
                 }
 
             }
